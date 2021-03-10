@@ -38,8 +38,8 @@ class XbrlExtraction:
             needs to be a string")
 
         files = [filename for filename in self.fs.ls(directory)
-                        if ((".htm" in filename.lower())
-                            or (".xml" in filename.lower()))
+                 if ((".htm" in filename.lower())
+                     or (".xml" in filename.lower()))
                  ]
 
         month_and_year = ''.join(directory.split('-')[-1:])
@@ -48,7 +48,7 @@ class XbrlExtraction:
         return files, month, year
 
     @staticmethod
-    def progressBar(name, value, endvalue, rows, batches,memory,uploading=False,
+    def progressBar(name, value, endvalue, rows, batches, memory, uploading=False,
                     bar_length=50, width=20):
         """
         Function that can be called upon if a progress bar needs to be
@@ -246,7 +246,6 @@ class XbrlExtraction:
 
     def output_xbrl_month(self, dataframe, output_folder, folder_month, folder_year,
                           file_type="csv"):
-
         """
         Save dataframe to csv format in specified directory, with particular
         naming scheme "YYYY-MM_xbrl_data.csv".
@@ -289,10 +288,10 @@ class XbrlExtraction:
 
         if file_type == "csv":
             name = output_folder + "/" + folder_year + "-"\
-                   + folder_month + "_xbrl_data.csv"
+                + folder_month + "_xbrl_data.csv"
             dataframe.to_csv("gs://"+name, index=False, header=True, sep=",",
-                                line_terminator='\n', quotechar='"',
-                                quoting=csv.QUOTE_NONNUMERIC)
+                             line_terminator='\n', quotechar='"',
+                             quoting=csv.QUOTE_NONNUMERIC)
             try:
                 self.fs.setxattrs(name, content_type="text/csv")
             except:

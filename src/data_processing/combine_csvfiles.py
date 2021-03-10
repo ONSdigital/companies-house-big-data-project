@@ -100,10 +100,10 @@ class XbrlCsvAppender:
         # WARNING: Causes memory overuse for large files
         combined_csv = pd.concat([pd.read_csv("gs://"+f,
                                               index_col=None,
-                                                header=0,
-                                                sep=",",
-                                                lineterminator="\t",
-                                                quotechar='"',
+                                              header=0,
+                                              sep=",",
+                                              lineterminator="\t",
+                                              quotechar='"',
                                               low_memory=False)
                                   for f in files])
         combined_csv.to_csv("gs://"+outfile, index=False)
@@ -137,7 +137,7 @@ class XbrlCsvAppender:
             raise ValueError(
                 "Specified input directory does not exist"
             )
-            
+
         return [indir+i for i in files]
 
     def merge_files_by_year(self, indir: str, outdir: str,
@@ -240,6 +240,7 @@ class XbrlCsvAppender:
         else:
             print("Input file path does not exist")
 
+
 if __name__ == '__main__':
 
     indir = 'ons-companies-house-dev-parsed-csv-data'
@@ -248,7 +249,7 @@ if __name__ == '__main__':
     quarter = "None"
 
     fs = gcsfs.GCSFileSystem("ons-companies-house-dev",
-                             token = "/home/dylan_purches/Desktop/data_key.json",
+                             token="/home/dylan_purches/Desktop/data_key.json",
                              cache_timeout=1)
 
     appender = XbrlCsvAppender(fs)

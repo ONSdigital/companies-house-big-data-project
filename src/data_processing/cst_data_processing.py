@@ -122,7 +122,7 @@ class DataProcessing:
                 right_coord = left_coord + rect_width
                 bottom_coord = top_coord + rect_height
                 region_of_interest = image[top_coord:bottom_coord,
-                                     left_coord:right_coord]
+                                           left_coord:right_coord]
                 cv2.imwrite(
                     output_folder
                     + "\\"
@@ -188,7 +188,7 @@ class DataProcessing:
                     if file.endswith('.zip'):
 
                         directory = file_dest + "/" + \
-                                    file.split('.')[0].split("/")[-1]
+                            file.split('.')[0].split("/")[-1]
 
                         # If the directory for the zip contents exists already,
                         # delete it just in case a previous attempt at
@@ -211,8 +211,8 @@ class DataProcessing:
                                     self.fs.setxattrs(
                                         directory + "/" + contentfilename,
                                         content_type="text/"
-                                                     +contentfilename \
-                                                         .split(".")[-1])
+                                                     + contentfilename
+                                        .split(".")[-1])
                                 except:
                                     print("Failed to save:", contentfilename)
                         print("Extracted files from " + file)
@@ -231,10 +231,11 @@ class DataProcessing:
         else:
             print("Destination directory not valid!: " + file_dest)
 
+
 def get_file_details(files, n_objects=1, x_coord=0, y_coord=0):
     """
     Returns details for a singular file.
-    
+
     Arguments:
         files:     list of files to filter (list)
         n_objects: number of object identified in scene (int)
@@ -262,7 +263,7 @@ def get_file_details(files, n_objects=1, x_coord=0, y_coord=0):
 def rename_files(input_folder, file_name="chp_signature", extension=".png"):
     """
     Renames all files in a directory to systematic structure.
-    
+
     Arguments:
         input_folder: directory to read in files (str)
         file_name:    naming convention to standardise to (str)

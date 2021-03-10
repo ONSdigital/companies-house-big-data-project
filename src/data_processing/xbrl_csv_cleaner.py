@@ -2,6 +2,7 @@ import pandas as pd
 import csv
 import os
 
+
 class XbrlCSVCleaner:
     """
     Class to facilitate the cleaning of csv files outputted from the
@@ -137,6 +138,7 @@ class XbrlCSVCleaner:
                                             export_directory + file)
             print('Successfully exported {}!'.format(file))
         return None
+
 
 if __name__ == "__main__":
     import gcsfs

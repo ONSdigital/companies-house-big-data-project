@@ -1,3 +1,14 @@
+from src.data_processing.xbrl_csv_cleaner import XbrlCSVCleaner
+from src.data_processing.combine_csvfiles import XbrlCsvAppender
+from src.validators.xbrl_validator_methods import XbrlValidatorMethods
+from src.data_processing.xbrl_parser import XbrlParser
+from src.data_processing.xbrl_pd_methods import XbrlExtraction
+from src.performance_metrics.binary_classifier_metrics import (
+    BinaryClassifierMetrics
+)
+from src.classifier.cst_classifier import Classifier
+from src.data_processing.cst_data_processing import DataProcessing
+from src.xbrl_scraper.requests_scraper import XbrlScraper
 from os import listdir, chdir, getcwd, popen
 from os.path import isfile, join
 import time
@@ -20,7 +31,7 @@ import importlib
 from datetime import datetime
 from dateutil import parser
 from bs4 import BeautifulSoup as BS  # Can parse xml or html docs
-pd.set_option("display.max_columns",500)
+pd.set_option("display.max_columns", 500)
 config = configparser.ConfigParser()
 config.read("cha_pipeline.cfg")
 
@@ -61,7 +72,7 @@ xbrl_unpacked_data = config.get('xbrl_parser_args', 'xbrl_parser_data_dir')
 xbrl_processed_csv = config.get('xbrl_parser_args',
                                 'xbrl_parser_processed_csv_dir')
 xbrl_parser_bq_location = config.get('xbrl_parser_args',
-                                'xbrl_parser_bq_location')
+                                     'xbrl_parser_bq_location')
 xbrl_tag_frequencies = config.get('xbrl_parser_args',
                                   'xbrl_parser_tag_frequencies')
 xbrl_tag_list = config.get('xbrl_parser_args', 'xbrl_parser_tag_list')
@@ -82,11 +93,11 @@ xbrl_file_appender_year = config.get('xbrl_file_appender_args',
 xbrl_file_appender_quarter = config.get('xbrl_file_appender_args',
                                         'xbrl_file_appender_quarter')
 
-#Arguments for xbrl csv cleaner
+# Arguments for xbrl csv cleaner
 xbrl_csv_cleaner_indir = config.get('xbrl_csv_cleaner_args',
                                     'xbrl_csv_cleaner_indir')
 xbrl_csv_cleaner_outdir = config.get('xbrl_csv_cleaner_args',
-                                    'xbrl_csv_cleaner_outdir')
+                                     'xbrl_csv_cleaner_outdir')
 
 # Arguments for xbrl melt to pivot table
 
@@ -112,17 +123,6 @@ xbrl_csv_cleaner_outdir = config.get('xbrl_csv_cleaner_args',
 
 # Arguments for merge_xbrl_to_pdf_data
 
-from src.xbrl_scraper.requests_scraper import XbrlScraper
-from src.data_processing.cst_data_processing import DataProcessing
-from src.classifier.cst_classifier import Classifier
-from src.performance_metrics.binary_classifier_metrics import (
-    BinaryClassifierMetrics
-)
-from src.data_processing.xbrl_pd_methods import XbrlExtraction
-from src.data_processing.xbrl_parser import XbrlParser
-from src.validators.xbrl_validator_methods import XbrlValidatorMethods
-from src.data_processing.combine_csvfiles import XbrlCsvAppender
-from src.data_processing.xbrl_csv_cleaner import XbrlCSVCleaner
 
 def main():
     print("-" * 50)
@@ -137,9 +137,9 @@ def main():
         print("Scraping XBRL data to:", xbrl_scraper_dir_to_save)
 
         scraper = XbrlScraper()
-        scraper.scrape_webpage( xbrl_scraper_url,
-                                xbrl_scraper_base_url,
-                                xbrl_scraper_dir_to_save)
+        scraper.scrape_webpage(xbrl_scraper_url,
+                               xbrl_scraper_base_url,
+                               xbrl_scraper_dir_to_save)
 
         # print("XBRL web scraper running...")
         # print("Scraping XBRL data to:", scraped_dir)
@@ -170,12 +170,12 @@ def main():
         print("XBRL parser running...")
         parser_executer = XbrlParser(fs)
         parser_executer.parse_files(xbrl_parser_process_quarter,
-                               xbrl_parser_process_year,
-                               xbrl_unpacked_data,
-                               xbrl_parser_custom_input,
-                               xbrl_parser_bq_location,
-                               xbrl_processed_csv,
-                               2)
+                                    xbrl_parser_process_year,
+                                    xbrl_unpacked_data,
+                                    xbrl_parser_custom_input,
+                                    xbrl_parser_bq_location,
+                                    xbrl_processed_csv,
+                                    2)
 
     # Execute module xbrl_csv_cleaner
     if xbrl_csv_cleaner == str(True):
@@ -282,6 +282,8 @@ def main():
         else:
             pass
     """
+
+
 if __name__ == "__main__":
     process_start = time.time()
 
