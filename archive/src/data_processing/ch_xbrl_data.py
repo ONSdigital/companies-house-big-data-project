@@ -1,7 +1,6 @@
 import pyspark.sql.functions as F
 from pyspark.sql.functions import regexp_replace
 
-
 class XbrlDataProcessing:
 	'''
 	'''
@@ -21,19 +20,19 @@ class XbrlDataProcessing:
 		Raises:
 			None
 		"""
-
+    
 		object = (
-			dataframe
-			.groupBy(name_column)
+			dataframe\
+			.groupBy(name_column)\
 			.agg(
 				F.countDistinct(crn_column).alias(count_column)
-			)
+			)\
 			.orderBy(F.col(count_column), ascending=False)
 		)
-
+		
 		return (object)
 
-	def principal_activity_filter(df, tag_name='descriptionprincipalactivities',
+	def principal_activity_filter(df, tag_name = 'descriptionprincipalactivities',
                               matching_string, has_tag_name,
                               has_matching_string):
 	    """
@@ -50,7 +49,7 @@ class XbrlDataProcessing:
 		tag_name:            The tag within the name column (column_name)
 		matching_string:     The string to filter on
 		has_tag_name:        1 means the df has the specified tag
-		has_matching_string: 1 means the df has the specified string in the
+		has_matching_string: 1 means the df has the specified string in the 
 				     'value' column
 
 	    Returns:
@@ -61,22 +60,22 @@ class XbrlDataProcessing:
 	    """
 
 	    tag_name = 'descriptionprincipalactivities'          # tag name to filter on
-	    matching_string = 'No description of principal activity'  # value to filter on
-	    column_name = 'doc_companieshouseregisterednumber'    # col to filter on
+	    matching_string = 'No description of principal activity' # value to filter on
+	    column_name = 'doc_companieshouseregisterednumber'    # col to filter on 
 
-	    df = df.withColumn('principal_activity',
+	    df = df.withColumn('principal_activity', 
 			       F.when(F.col('name') == tag_name, 1).otherwise(0))\
 		   .withColumn('no_principal_activity',
 		    	       F.when(F.col('value') == matching_string, 1).otherwise(0))\
-		   .orderBy([column_name, 'principal_activity'], ascending=False)\
+		   .orderBy([column_name, 'principal_activity'], ascending = False)\
        		   .groupBy([column_name, 'doc_balancesheetdate', 'value'])\
        		   .agg(F.first('principal_activity').alias('principal_activity'),
 		    	F.first('no_principal_activity').alias('no_principal_activity'))\
     		   .filter(F.col('principal_activity') == has_tag_name)\
 		   .filter(F.col('no_principal_activity') == has_matching_string))
-
+	
 	    return(df)
-
+        
 	def xbrl_import(fp, year, month):
 	    """
 	    This function reads in the data for the chosen year and month from a
@@ -87,15 +86,15 @@ class XbrlDataProcessing:
 		    year: The year of the data
 		    month: The month of the data
 
-	    Returns:
+	    Returns: 
 		A Spark Data frame
 
 	    Raises:
     		None
 	    """
-
-      import_fp=fp+'/'+str(year)+'_'+str(month).lower()+'_parsed.parquet'
-	    df=spark.read.parquet(import_fp)
+      
+      import_fp = fp+'/'+str(year)+'_'+str(month).lower()+'_parsed.parquet'
+	    df = spark.read.parquet(import_fp)
 
 	    return(df)
 
@@ -111,22 +110,22 @@ class XbrlDataProcessing:
 
 	    Returns:
 		A function object
-
+        
             Raises:
     		None
 	    """
-
-	    object=(df
+      
+	    object = (df
 		     .groupBy('name')
 		     .agg(
 		     F.count(
 		      'doc_companieshouseregisterednumber').alias('tag_count')
 		     )
-		     .orderBy(F.col('tag_count'), ascending=False)
+		     .orderBy(F.col('tag_count'),ascending=False)
 		     )
 
 	    return(object)
-
+	
 	def tag_distribution(dataframe, tag_contains, tag_col, crn_col):
 	    """
 	    Provision of distribution of values (referred to as 'tags') attributed to column 'name'.
@@ -134,19 +133,19 @@ class XbrlDataProcessing:
 	    dataset coverage.
 
 	    Args:
-		dataframe:    a spark dataframe
-		tag_contains: the value to filter
+		dataframe:    a spark dataframe 
+		tag_contains: the value to filter 
 		tag_col:      the column the value is attributed to
 		crn_col:      the column name for crn values
-
+		
 	    Returns:
 		A spark dataFrame
-
+		
 	    Raises:
 		None
 	    """
 
-	    dataframe=(
+	    dataframe = (
 		dataframe
 		.filter(
 		    F.col(tag_col).contains(tag_contains))

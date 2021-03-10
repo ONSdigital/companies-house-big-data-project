@@ -30,7 +30,7 @@ class XbrlValidatorMethods:
                 "The output filepath needs to be specified as a string"
             )
         # Check input is a valid file path
-        if not exists(filepath):
+        if not exists(filepath) :
             raise ValueError(
                 "The file path specified does not exist"
             )
@@ -45,8 +45,7 @@ class XbrlValidatorMethods:
                 for file in files:
                     gcs_file = self.fs.open(file, 'rb')
                     print("File: " + file)
-                    print("File size: " +
-                          str(gcs_file.info()["size"]) + " bytes")
+                    print("File size: " + str(gcs_file.info()["size"]) + " bytes")
 
                     #file_time = datetime.utcfromtimestamp(gcs_file.info()["updated"])
                     print("File modified: "
@@ -162,3 +161,4 @@ class XbrlValidatorMethods:
             else:
                 print("Some files not extracted correctly from zip file!:")
                 print(str(diff))
+

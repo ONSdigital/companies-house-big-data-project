@@ -21,6 +21,8 @@ import psutil
 import gc
 
 
+
+
 class XbrlParser:
     """ This is a class for parsing the XBRL data."""
 
@@ -270,7 +272,7 @@ class XbrlParser:
             None
         """
         element_dict = {'name': [], 'value': [], 'unit': [],
-                        'date': []}
+                         'date': []}
         i = 0
         for each in element_set:
             if "contextref" not in each.attrs:
@@ -279,8 +281,7 @@ class XbrlParser:
             # Basic name and value
             try:
                 # Method for XBRLi docs first
-                element_dict['name'].append(
-                    each.attrs['name'].lower().split(":")[-1])
+                element_dict['name'].append(each.attrs['name'].lower().split(":")[-1])
             except:
                 # Method for XBRL docs second
                 element_dict['name'].append(each.name.lower().split(":")[-1])
@@ -310,7 +311,7 @@ class XbrlParser:
             except:
                 pass
 
-            i += 1
+            i+=1
         return element_dict
 
     @staticmethod
@@ -336,7 +337,7 @@ class XbrlParser:
             )
         if isinstance(variable_names, list):
             if not all(isinstance(name, str) for name in variable_names):
-                raise TypeError(
+                raise TypeError (
                     "Variable names must be passed as strings"
                 )
         else:
@@ -429,7 +430,7 @@ class XbrlParser:
         Takes a document (dict) after extraction, and tries to extract
         summary variables relating to the financial state of the enterprise
         by returning all those named that exist.
-
+        
         Arguments:
             doc:            an extracted document dict, with "elements" entry
                             as created by the 'scrape_clean_elements' functions
@@ -501,7 +502,7 @@ class XbrlParser:
             # if fails parsing create dummy entry elements so entry still
             # exists in dictionary
             elements = {'name': 'NA', 'value': 'NA', 'unit': 'NA',
-                        'date': 'NA', 'sign': 'NA'}
+                         'date': 'NA', 'sign': 'NA'}
             pass
 
         return elements
@@ -778,8 +779,8 @@ class XbrlParser:
 
         # Check all arguments have acceptable values
         valid_months = ['January', 'February', 'March', 'April',
-                        'May', 'June', 'July', 'August',
-                        'September', 'October', 'November', 'December']
+                          'May', 'June', 'July', 'August',
+                          'September', 'October', 'November', 'December']
         if not all(month in valid_months for month in months):
             raise ValueError(
                 "Invalid entries in 'month' argument"
@@ -834,6 +835,7 @@ class XbrlParser:
         # Here you can splice/truncate the number of files you want to process
         # for testing
         # files = files[0:600]
+
 
         # TO BE COMMENTED OUT AFTER TESTING
         print(folder_month, folder_year)
@@ -918,9 +920,9 @@ class XbrlParser:
         # directories
         month_list = self.create_month_list(quarter)
         directory_list = self.create_directory_list(month_list,
-                                                    unpacked_files,
-                                                    year,
-                                                    custom_input)
+                                                  unpacked_files,
+                                                  year,
+                                                  custom_input)
         # Parse each directory
         for directory in directory_list:
             print("Parsing " + directory + "...")
@@ -1021,7 +1023,8 @@ class XbrlParser:
                                        len(list_of_files), row_count,
                                        batch_count,
                                        psutil.virtual_memory().percent,
-                                       bar_length=50, width=20)
+                                       bar_length=50,width=20)
+
 
         print(
             "Average time to process an XBRL file: \x1b[31m{:0f}\x1b[0m".format(
@@ -1048,7 +1051,7 @@ class XbrlParser:
 
         job_config = bigquery.LoadJobConfig(
             # Set the schema types to match those in parsed_data_schema.txt
-            schema=[
+            schema = [
                 bigquery.SchemaField("doc_companieshouseregisterednumber",
                                      bigquery.enums.SqlTypeNames.STRING),
                 bigquery.SchemaField("date", bigquery.enums.SqlTypeNames.DATE),
@@ -1083,7 +1086,7 @@ class XbrlParser:
         # Make an API request.
         job = client.load_table_from_dataframe(
             df, table, job_config=job_config
-        )
+            )
         # Wait for the job to complete.
         job.result()
         # Free memory of job
@@ -1156,12 +1159,12 @@ class XbrlParser:
 
         # Recreate the header as a single df with just the header row
         header = pd.DataFrame(columns=['date', 'name', 'unit', 'value',
-                                       'doc_name', 'doc_type',
-                                       'doc_upload_date', 'arc_name', 'parsed',
-                                       'doc_balancesheetdate',
-                                       'doc_companieshouseregisterednumber',
-                                       'doc_standard_type',
-                                       'doc_standard_date', 'doc_standard_link'],)
+                            'doc_name', 'doc_type',
+                           'doc_upload_date', 'arc_name', 'parsed',
+                           'doc_balancesheetdate',
+                           'doc_companieshouseregisterednumber',
+                           'doc_standard_type',
+                           'doc_standard_date', 'doc_standard_link'],)
         header.to_csv("gs://" + gcs_location + "/header_" + file_name + ".csv",
                       header=True, index=False)
 
@@ -1173,9 +1176,8 @@ class XbrlParser:
 
         # Set up a gcs storage client and locations for things
         storage_client = storage.Client()
-        bucket = storage_client.bucket(gcs_location.split("/", 1)[0])
-        destination = bucket.blob(gcs_location.split(
-            "/", 1)[1] + "/" + file_name + ".csv")
+        bucket = storage_client.bucket(gcs_location.split("/",1)[0])
+        destination = bucket.blob(gcs_location.split("/", 1)[1] + "/" + file_name + ".csv")
         destination.content_type = "text/csv"
 
         # Combine all the specified files
@@ -1184,6 +1186,7 @@ class XbrlParser:
 
         # Remove the intermediate files
         self.fs.rm([f for f in self.fs.ls(gcs_location)
-                    if ((f.split("/")[-1]).startswith(file_name + "0")) or
+                       if ((f.split("/")[-1]).startswith(file_name + "0")) or
                     ((f.split("/")[-1]).startswith("header_" + file_name))
                     ])
+

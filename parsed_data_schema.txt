@@ -1,0 +1,86 @@
+[
+  {
+    "description": "Date associated to the 'name' variable, for a given company account.",
+    "mode": "NULLABLE",
+    "name": "date",
+    "type": "DATE"
+  },
+  {
+    "description": "Tag extracted from the company account, representing a piece of information present on a company account.",
+    "mode": "NULLABLE",
+    "name": "name",
+    "type": "STRING"
+  },
+  {
+    "description": "Associated unit to the 'name' variable",
+    "mode": "NULLABLE",
+    "name": "unit",
+    "type": "STRING"
+  },
+  {
+    "description": "Associated value to the 'name' variable",
+    "mode": "NULLABLE",
+    "name": "value",
+    "type": "STRING"
+  },
+  {
+    "description": "UID: The original naming convention of the file.",
+    "mode": "NULLABLE",
+    "name": "doc_name",
+    "type": "STRING"
+  },
+  {
+    "description": "The original type of the document (html / xbrl)",
+    "mode": "NULLABLE",
+    "name": "doc_type",
+    "type": "STRING"
+  },
+  {
+    "description": "The date which the account was uploaded / processed. This should not be used when analysing the content of the data.",
+    "mode": "NULLABLE",
+    "name": "doc_upload_date",
+    "type": "TIMESTAMP"
+  },
+  {
+    "description": "The location where the company account originated from. Usually the month/year of the aggregate file downloaded from companies house website.",
+    "mode": "NULLABLE",
+    "name": "arc_name",
+    "type": "STRING"
+  },
+  {
+    "description": "A boolean flag to indicate if the corresponding account has been parsed correctly.",
+    "mode": "NULLABLE",
+    "name": "parsed",
+    "type": "BOOLEAN"
+  },
+  {
+    "description": "The balance sheet end date associated to the returned company account.",
+    "mode": "NULLABLE",
+    "name": "doc_balancesheetdate",
+    "type": "DATE"
+  },
+  {
+    "description": "The company house registration number associated to the company account return.",
+    "mode": "NULLABLE",
+    "name": "doc_companieshouseregisterednumber",
+    "type": "STRING"
+  },
+  {
+    "description": "Accounting standard used when populating the account.",
+    "mode": "NULLABLE",
+    "name": "doc_standard_type",
+    "type": "STRING"
+  },
+  {
+    "description": "Date associated to the accounting standard used to fill in the company account.",
+    "mode": "NULLABLE",
+    "name": "doc_standard_date",
+    "type": "DATE"
+  },
+  {
+    "description": "Link to the corresponding accounting standard type used to populate the account.",
+    "mode": "NULLABLE",
+    "name": "doc_standard_link",
+    "type": "STRING"
+  }
+]

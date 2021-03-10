@@ -7,7 +7,7 @@ import time
 import random
 import argparse
 import sys
-import cv2
+#import cv2
 import configparser
 
 
@@ -74,6 +74,8 @@ class XBRLSpider(CrawlSpider):
                           hashlib.sha1(link.encode('utf-8')).hexdigest()
                           not in files]
 
+        filtered_links = [filtered_links[0]]
+
         # Yield items for download
         for link in filtered_links:
 
@@ -84,7 +86,7 @@ class XBRLSpider(CrawlSpider):
             #if link == 'http://download.companieshouse.gov.uk/\
             # Accounts_Bulk_Data-2020-05-19.zip':
             #if link == 'http://download.companieshouse.gov.uk/archive\
-            # /Accounts_Monthly_Data-December2019.zip':
+            # /Accounts_Monthly_Data-August2020.zip':
 
             yield XbrlScraperItem(file_urls=[link])
 
