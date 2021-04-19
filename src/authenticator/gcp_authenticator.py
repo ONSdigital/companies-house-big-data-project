@@ -57,10 +57,10 @@ class GCPAuthenticator:
             raise ValueError(
         "Specified path either does not exist or isn't a directory"
         )
-        if self.check_git_repo(keys_filepath):
-            raise ValueError(
-        "SECURITY WARNING - do not save keys within a git repo! Ensure folder is immediately deleted from repo"
-        )   
+        #if self.check_git_repo(keys_filepath):
+        #    raise ValueError(
+        #"SECURITY WARNING - do not save keys within a git repo! Ensure folder is immediately deleted from repo"
+        #)   
 
         self.keys_filepath = keys_filepath
 
@@ -322,7 +322,6 @@ if __name__ == "__main__":
     import atexit
     import gcsfs
     
-
-    keys_folder = "/home/dylan_purches/repos/companies-house-big-data-project/test_dir"
-    authenticator = GCPAuthenticator("/home/dylan_purches/keys/data_key.json", "ons-companies-house-dev")
+    keys_folder = "/home/kirsty_cope/keys"
+    authenticator = GCPAuthenticator("/home/kirsty_cope/keys/Feb_key.json", "ons-companies-house-dev")
     

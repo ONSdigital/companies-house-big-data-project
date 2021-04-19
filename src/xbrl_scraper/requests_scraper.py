@@ -65,9 +65,9 @@ class XbrlScraper:
             # Filter out files that are not zip
             links = [link for link in links if link[-4:] == ".zip"]
 
-            creds = service_account.Credentials.from_service_account_info(self.key)
-            storage_client = storage.Client(credentials=creds)
-            bucket = storage_client.bucket(dir_to_save.split("/")[0])
+            #creds = service_account.Credentials.from_service_account_info(self.key)
+            #storage_client = storage.Client(credentials=creds)
+            #bucket = storage_client.bucket(dir_to_save.split("/")[0])
 
             # Download and save zip files
             for link in links:
@@ -76,8 +76,10 @@ class XbrlScraper:
 
                 if "/" in link: link = link.split("/")[-1]
 
-                blob = bucket.blob("/".join(dir_to_save.split("/")[1:]) + "/" + link)
-
+                #blob = bucket.blob("/".join(dir_to_save.split("/")[1:]) + "/" + link)
+                storage_client = storage.Client()
+                blob = storage_client.bucket(dir_to_save.split("/")[0])
+    
                 # Only download and save a file if it doesn't exist in the directory
                 if not blob.exists():
                                      
@@ -101,15 +103,17 @@ class XbrlScraper:
             print("Unable to scrape web page!")
             print("Error code: " + status)
 
-# if __name__ == "__main__":
-    # scraper = XbrlScraper()
 
-    # url = "http://download.companieshouse.gov.uk/en_monthlyaccountsdata.html"
-    # base_url = "http://download.companieshouse.gov.uk/"
+
+if __name__ == "__main__":
+    scraper = XbrlScraper()
+
+    url = "http://download.companieshouse.gov.uk/en_monthlyaccountsdata.html"
+    base_url = "http://download.companieshouse.gov.uk/"
 
     # # url = "http://download.companieshouse.gov.uk/historicmonthlyaccountsdata.html"
     # # base_url = "http://download.companieshouse.gov.uk/"
 
-    # dir_to_save = "ons-companies-house-dev-xbrl-scraped-data/requests_scraper_test_folder"
+    dir_to_save = "basic_company_data/webscrape_test"
 
-    # scraper.scrape_webpage(url, base_url, dir_to_save)
+    scraper.scrape_webpage(url, base_url, dir_to_save)
