@@ -28,7 +28,7 @@ def export_csv(event, content):
     file_name = event["attributes"]["file_name"]
 
     # Set up GCP file system object
-    fs = gcsfs.GCSFSFilesystem(cache_timeout=0)
+    fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
     # Set up a BigQuery client
     client = bigquery.Client()
