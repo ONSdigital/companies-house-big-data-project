@@ -692,36 +692,6 @@ class XbrlParser:
         # Set up a BigQuery client
         client = bigquery.Client(project="ons-companies-house-dev")
 
-        # Set the schema types to match those in parsed_data_schema.txt
-        schema = [
-            bigquery.SchemaField("doc_companieshouseregisterednumber",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("date", bigquery.enums.SqlTypeNames.DATE),
-            bigquery.SchemaField("parsed",
-                                    bigquery.enums.SqlTypeNames.BOOLEAN),
-            bigquery.SchemaField("doc_balancesheetdate",
-                                    bigquery.enums.SqlTypeNames.DATE),
-            bigquery.SchemaField("doc_upload_date",
-                                    bigquery.enums.SqlTypeNames.TIMESTAMP),
-            bigquery.SchemaField("doc_standard_date",
-                                    bigquery.enums.SqlTypeNames.DATE),
-            bigquery.SchemaField("name",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("unit",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("value",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("doc_name",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("doc_type",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("arc_name",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("doc_standard_type",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("doc_standard_link",
-                                    bigquery.enums.SqlTypeNames.STRING)
-        ],
         # Convert Dataframe columns to string so they are JSON serializable
         df = df.astype(str)
         
@@ -736,38 +706,4 @@ class XbrlParser:
             except:
                 doc_name = "Unkown"
             print(f"Errors from bq upload for {doc_name}: {errors}")
-        
-    def mk_bq_table(self, bq_location, schema="parsed_data_schema.txt"):
-        """
-        Function to create a BigQuery table in a specified location with a
-        schema specified by a txt file.
-
-        Arguments:
-            bq_location:    Location of BigQuery table, in form
-                            "<dataset>.<table_name>"
-            schema:         File path of schema specified as txt file
-        Returns:
-            None
-        Raises:
-            None
-        """
-        # Set up a BigQuery client
-        client = bigquery.Client("ons-companies-house-dev")
-
-        # Check if table exists
-        try:
-            client.get_table(bq_location)
-            table_exists = True
-        except:
-            table_exists = False
-
-        if table_exists:
-            raise ValueError("Table already exists, please remove and retry")
-        
-
-        # Create the table using the command line
-        bq_string = "bq mk --table " + bq_location + " " + schema
-        os.popen(bq_string).read()
-        
-        # Remove environment variables
-        os.environ.clear()
+ 
