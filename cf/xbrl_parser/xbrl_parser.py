@@ -4,7 +4,7 @@ from dateutil import parser
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from google.cloud import storage
-from google.cloud import retry
+from google.api_core import retry
 import pandas as pd
 import os
 import csv
