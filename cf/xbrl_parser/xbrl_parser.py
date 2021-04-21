@@ -694,16 +694,19 @@ class XbrlParser:
 
         # Convert Dataframe columns to string so they are JSON serializable
         df = df.astype(str)
+        # Create Retry condition (120 second retry deadline)
+        my_retry = retry.Retry(deadline=120)
         
         # Make an API request.
         errors = client.insert_rows_json(
-            table, df.to_dict('records'), skip_invalid_rows=False
+            table, df.to_dict('records'), skip_invalid_rows=False,
+            retry = my_retry
             )
         # Print errors if any are returned
         if len(errors) > 0:
             try:
                 doc_name = df["doc_name"][0]
             except:
-                doc_name = "Unkown"
+                doc_name = "Unknown"
             print(f"Errors from bq upload for {doc_name}: {errors}")
  
