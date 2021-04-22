@@ -397,28 +397,28 @@ class XbrlParser:
 
             # Set explicit data types for date columns - requirement for
             # BigQuery upload
-            df_element_export['doc_upload_date'] = pd.to_datetime(
-                df_element_export['doc_upload_date'],
-                errors="coerce")
-            df_element_export['doc_upload_date'] = df_element_export['doc_upload_date'].astype("str")
-            df_element_export['date'] \
-                = pd.to_datetime(df_element_export['date'],
-                                 format="%Y-%m-%d",
-                                 errors="coerce")
-            df_element_export['doc_balancesheetdate'] \
-                = pd.to_datetime(df_element_export['doc_balancesheetdate'],
-                                 format="%Y-%m-%d",
-                                 errors="coerce")
-            df_element_export['doc_standard_date'] \
-                = pd.to_datetime(df_element_export['doc_standard_date'],
-                                 format="%Y-%m-%d",
-                                 errors="coerce")    
-            #convert unknown values to support pandas.NA
-            df_element_export = df_element_export.convert_dtypes()
+#             df_element_export['doc_upload_date'] = pd.to_datetime(
+#                 df_element_export['doc_upload_date'],
+#                 errors="coerce")
+#             df_element_export['doc_upload_date'] = df_element_export['doc_upload_date'].astype("str")
+#             df_element_export['date'] \
+#                 = pd.to_datetime(df_element_export['date'],
+#                                  format="%Y-%m-%d",
+#                                  errors="coerce")
+#             df_element_export['doc_balancesheetdate'] \
+#                 = pd.to_datetime(df_element_export['doc_balancesheetdate'],
+#                                  format="%Y-%m-%d",
+#                                  errors="coerce")
+#             df_element_export['doc_standard_date'] \
+#                 = pd.to_datetime(df_element_export['doc_standard_date'],
+#                                  format="%Y-%m-%d",
+#                                  errors="coerce")    
+#             #convert unknown values to support pandas.NA
+#             df_element_export = df_element_export.convert_dtypes()
             
-            date_cols = ['date','doc_balancesheetdate','doc_standard_date']
-            for col in date_cols:
-                df_element_export[col] = df_element_export[col].replace('NaT',None)
+#             date_cols = ['date','doc_balancesheetdate','doc_standard_date']
+#             for col in date_cols:
+#                 df_element_export[col] = df_element_export[col].replace('NaT',None)
              
             self.append_to_bq(df_element_export, bq_export)
 
