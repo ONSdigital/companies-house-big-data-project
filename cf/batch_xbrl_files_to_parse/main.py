@@ -101,12 +101,12 @@ def batch_files(event, context):
     min_batch_size = len(all_files)//1400
 
     # Set the batch size
-    n = 300
+    n = 200
 
-    if n < min_batch_size:
-        raise ValueError(
-            "Batch size is too small (will exceed BQ max uploads)"
-    )
+    #if n < min_batch_size:
+    #    raise ValueError(
+    #        "Batch size is too small (will exceed BQ max uploads)"
+    #)
 
     # Extract the relevant date information from the directory name
     folder_month = "".join(xbrl_directory.split("/")[-1].split("-")[1:])[0:-4]
