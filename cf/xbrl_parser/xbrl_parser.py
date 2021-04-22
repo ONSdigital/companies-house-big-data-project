@@ -394,7 +394,6 @@ class XbrlParser:
 
             # Keep only the remaining columns and set dtypes
             df_element_export = df_element_export[wanted_cols]
-            df_element_export = df_element_export.convert_dtypes()
 
             # Set explicit data types for date columns - requirement for
             # BigQuery upload
@@ -413,7 +412,9 @@ class XbrlParser:
             df_element_export['doc_standard_date'] \
                 = pd.to_datetime(df_element_export['doc_standard_date'],
                                  format="%Y-%m-%d",
-                                 errors="coerce")            
+                                 errors="coerce")    
+            #convert unknown values to support pandas.NA
+            df_element_export = df_element_export.convert_dtypes()
             
             self.append_to_bq(df_element_export, bq_export)
 
