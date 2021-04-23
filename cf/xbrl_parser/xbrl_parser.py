@@ -704,9 +704,16 @@ class XbrlParser:
         #my_retry = retry.Retry(deadline=120)
         
         # Make an API request.
-        errors = client.insert_rows_json(
-            table, df.to_dict('records'), skip_invalid_rows=False,
-            )
+        try:
+            errors = client.insert_rows_json(
+                table, df.to_dict('records'), skip_invalid_rows=False,
+                )
+        except:
+            print("Error: Dataframe failed to upload to big query, of shape {}".format(df.shape))
+            try:
+                print("File name, {}".format(df["doc_name"][0]))
+            except:
+                print("File name unavailable")
         # Print errors if any are returned
         if len(errors) > 0:
             try:
