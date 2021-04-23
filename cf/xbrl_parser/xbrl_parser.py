@@ -394,30 +394,31 @@ class XbrlParser:
 
             # Keep only the remaining columns and set dtypes
             df_element_export = df_element_export[wanted_cols]
-
+            # Define error handling method
+            error = "ignore"
             # Set explicit data types for date columns - requirement for
             # BigQuery upload
             df_element_export['doc_upload_date'] = pd.to_datetime(
                 df_element_export['doc_upload_date'],
-                errors="coerce")
+                errors=error)
             df_element_export['doc_upload_date'] = df_element_export['doc_upload_date'].astype("str")
             df_element_export['date'] \
                 = pd.to_datetime(df_element_export['date'],
                                  format="%Y-%m-%d",
-                                 errors="coerce")
+                                 errors=error)
             df_element_export['doc_balancesheetdate'] \
                 = pd.to_datetime(df_element_export['doc_balancesheetdate'],
                                  format="%Y-%m-%d",
-                                 errors="coerce")
+                                 errors=error)
             df_element_export['doc_standard_date'] \
                 = pd.to_datetime(df_element_export['doc_standard_date'],
                                  format="%Y-%m-%d",
-                                 errors="coerce")    
+                                 errors=error)    
             #convert unknown values to support pandas.NA
             df_element_export = df_element_export.convert_dtypes()
             
-            date_cols = ['date','doc_balancesheetdate','doc_standard_date'] 
-            df_element_export[date_cols] = df_element_export[date_cols].fillna(None)
+            #date_cols = ['date','doc_balancesheetdate','doc_standard_date'] 
+            #df_element_export[date_cols] = df_element_export[date_cols].fillna(None)
              
             self.append_to_bq(df_element_export, bq_export)
 
