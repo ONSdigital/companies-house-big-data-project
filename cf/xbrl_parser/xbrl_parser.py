@@ -708,17 +708,18 @@ class XbrlParser:
             errors = client.insert_rows_json(
                 table, df.to_dict('records'), skip_invalid_rows=False,
                 )
+                    # Print errors if any are returned
+            if len(errors) > 0:
+                try:
+                    doc_name = df["doc_name"][0]
+                except:
+                    doc_name = "Unknown"
+                print(f"Errors from bq upload for {doc_name}: {errors}")
+                
         except:
             print("Error: Dataframe failed to upload to big query, of shape {}".format(df.shape))
             try:
                 print("File name, {}".format(df["doc_name"][0]))
             except:
                 print("File name unavailable")
-        # Print errors if any are returned
-        if len(errors) > 0:
-            try:
-                doc_name = df["doc_name"][0]
-            except:
-                doc_name = "Unknown"
-            print(f"Errors from bq upload for {doc_name}: {errors}")
  
