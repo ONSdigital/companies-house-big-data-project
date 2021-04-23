@@ -417,7 +417,7 @@ class XbrlParser:
             df_element_export = df_element_export.convert_dtypes()
             
             date_cols = ['date','doc_balancesheetdate','doc_standard_date'] 
-            df_element_export[date_cols] = df_element_export[date_cols].fillna(np.nan)
+            df_element_export[date_cols] = df_element_export[date_cols].fillna(None)
              
             self.append_to_bq(df_element_export, bq_export)
 
