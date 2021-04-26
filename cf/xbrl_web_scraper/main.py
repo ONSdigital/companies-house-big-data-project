@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import time
 import random
 import base64
-from google.cloud import storage
+from google.cloud import storage, pubsub_v1
 
 def scrape_webpage(event, context):
     """
@@ -35,6 +35,7 @@ def scrape_webpage(event, context):
     # Extract relevant attributes from the pub/sub message
     zip_url = event["attributes"]["zip_path"]
     link = event["attributes"]["link_path"]
+    test_run = event["attributes"]["test"]
 
     # Deal with the 'blob' notation
     if len(dir_to_save.split("/")[1:]) > 0:
@@ -47,3 +48,10 @@ def scrape_webpage(event, context):
     
     print("Saving zip file " + link + "...")
     blob.upload_from_string(zip_file, content_type="application/zip")
+    
+    if not test_run:
+        publisher = pubsub_v1.PublisherClient()
+        topic_path = publisher.topic_path("ons-companies-house-dev", "downloaded_zip_files")
+        future = publisher.publish(
+            topic_path, zip_path=dir_to_save+"/"+link
+        )
