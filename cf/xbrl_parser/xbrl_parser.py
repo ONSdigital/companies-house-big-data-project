@@ -648,7 +648,7 @@ class XbrlParser:
 
         # Loop over all the files listed
         for file in filenames:
-            filepath = directory + file
+            filepath = directory + "/" + file
             if self.fs.exists(filepath):
                 # If the file exists try and process it
                 try:
