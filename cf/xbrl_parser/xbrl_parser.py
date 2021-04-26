@@ -593,8 +593,7 @@ class XbrlParser:
 
         return directory_list
 
-    def parse_files(self, files_list, directory, table_export,
-                        processed_path):
+    def parse_files(self, files_list, directory, table_export):
         """
         Takes a list of files and a directory, parses all files contained there 
         and exports them as a BigQuery table in a specified location.
@@ -610,14 +609,14 @@ class XbrlParser:
             None
         """
         # Process all the files in the list of files
-        results, fails = self.combine_batch_data(files_list)
+        results, fails = self.combine_batch_data(files_list, directory)
 
         # Retry unparsed files
         if len(fails) > 0:
             # Check enough time is left
             if time.time() - self.t0 < 420:
                 # Retry failed files
-                results0, fails0 = self.combine_batch_data(fails)
+                results0, fails0 = self.combine_batch_data(fails, directory)
                 results += results0
                 fails = fails0
             print(f"{fails} files did not parse")
@@ -628,7 +627,7 @@ class XbrlParser:
         return None
 
    
-    def combine_batch_data(self, filenames):
+    def combine_batch_data(self, filenames, directory):
         """
         For each xbrl file in a given list of file names, try to process
         it and append the result to a list.
@@ -648,7 +647,8 @@ class XbrlParser:
         fails = []
 
         # Loop over all the files listed
-        for filepath in filenames:
+        for file in filenames:
+            filepath = directory + file
             if self.fs.exists(filepath):
                 # If the file exists try and process it
                 try:

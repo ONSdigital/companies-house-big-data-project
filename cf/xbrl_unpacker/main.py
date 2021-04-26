@@ -3,6 +3,7 @@ import gcsfs
 import zipfile
 import time
 import logging
+from google.cloud import pubsub_v1
 
 def unpack_xbrl_file(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
@@ -19,12 +20,15 @@ def unpack_xbrl_file(event, context):
     xbrl_list = eval(base64.b64decode(event['data']).decode('utf-8'))
 
     zip_path = event["attributes"]["zip_path"]
-    save_directory = event["attributes"]["save_directory"]
+    xbrl_directory = event["attributes"]["xbrl_directory"]
+
+    bq_location = event["attributes"]["bq_location"]
+    test_run = eval(event["attributes"]["test"])
     
     with zipfile.ZipFile(fs.open(zip_path), 'r') as zip_ref:
       # For each file listed, download it to the specified location
       for xbrl_path in xbrl_list:
-        upload_path = save_directory + "/" + xbrl_path
+        upload_path = xbrl_directory + "/" + xbrl_path
 
         # Attempt to read the relevant file to be unpacked
         try:
@@ -44,3 +48,12 @@ def unpack_xbrl_file(event, context):
         except:
             logging.warn(f"Unable to write to {upload_path}")
             continue
+    
+    if not test_run:
+        publisher = pubsub_v1.PublisherClient()
+        topic_path = publisher.topic_path("ons-companies-house-dev", "xbrl_parser_batches")
+        data = str(xbrl_list).encode("utf-8")
+        future = publisher.publish(
+            topic_path, data, xbrl_directory=xbrl_directory, table_export=bq_location
+        )
+

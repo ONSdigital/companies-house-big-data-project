@@ -25,10 +25,9 @@ def parse_batch(event, context):
     # Obtain the relevant attributes from the pub/sub message
     xbrl_directory = event["attributes"]["xbrl_directory"]
     table_export = event["attributes"]["table_export"]
-    csv_location = event["attributes"]["csv_location"]
 
     # Parse the batch of files
-    parser.parse_files(files, xbrl_directory, table_export, csv_location)
+    parser.parse_files(files, xbrl_directory, table_export)
 
     return None
 
