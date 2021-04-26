@@ -52,7 +52,7 @@ def scrape_webpage(event, context):
     if not eval(test_run):
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path("ons-companies-house-dev", "downloaded_zip_files")
-        data = f"Triggering unpacker for {link}"
+        data = f"Triggering unpacker for {link}".encode("utf-8")
         future = publisher.publish(
             topic_path, data, zip_path=dir_to_save+"/"+link
         )
