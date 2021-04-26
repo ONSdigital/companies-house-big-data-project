@@ -34,7 +34,7 @@ def export_csv(event, content):
     client = bigquery.Client()
 
     # Don't include table header (will mess up combing csvs otherwise)
-    job_config = bigquery.job.ExtractJobConfig(print_header=False)
+    job_config = bigquery.job.ExtractJobConfig(print_header=False, field_delimiter="\t")
 
     # Extract table into multiple smaller csv files
     extract_job = client.extract_table(
