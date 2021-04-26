@@ -1,7 +1,7 @@
 import base64
 import gcsfs
 import zipfile
-from google.cloud import pubsub_v1
+from google.cloud import pubsub_v1, bigquery
 
 def callback(future):
     """
@@ -20,67 +20,67 @@ def callback(future):
     message_id = future.result()
 
 
-  def mk_bq_table(bq_location, schema="parsed_data_schema.txt"):
-        """
-        Function to create a BigQuery table in a specified location with a
-        specified schema.
+def mk_bq_table(bq_location, schema="parsed_data_schema.txt"):
+    """
+    Function to create a BigQuery table in a specified location with a
+    specified schema.
 
-        Arguments:
-            bq_location:    Location of BigQuery table, in form
-                            "<project>.<dataset>.<table_name>"
-        Returns:
-            None
-        Raises:
-            None
-        """
-        # Set up a BigQuery client
-        client = bigquery.Client()
+    Arguments:
+        bq_location:    Location of BigQuery table, in form
+                        "<project>.<dataset>.<table_name>"
+    Returns:
+        None
+    Raises:
+        None
+    """
+    # Set up a BigQuery client
+    client = bigquery.Client()
 
-        # Check if table exists
-        try:
-            client.get_table(bq_location)
-            table_exists = True
-        except:
-            table_exists = False
+    # Check if table exists
+    try:
+        client.get_table(bq_location)
+        table_exists = True
+    except:
+        table_exists = False
 
-        if table_exists:
-            raise ValueError("Table already exists, please remove and retry")
-        
-        # Define the expected schema (for xbrl data)
-        schema = schema = [
-            bigquery.SchemaField("date", 
-                                    bigquery.enums.SqlTypeNames.DATE),
-            bigquery.SchemaField("name",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("unit",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("value",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("doc_name",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("doc_type",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("doc_upload_date",
-                                    bigquery.enums.SqlTypeNames.TIMESTAMP), 
-            bigquery.SchemaField("arc_name",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("parsed",
-                                    bigquery.enums.SqlTypeNames.BOOLEAN),  
-            bigquery.SchemaField("doc_balancesheetdate",
-                                    bigquery.enums.SqlTypeNames.DATE),                                                                                             
-            bigquery.SchemaField("doc_companieshouseregisterednumber",
-                                    bigquery.enums.SqlTypeNames.STRING),
-            bigquery.SchemaField("doc_standard_type",
-                                    bigquery.enums.SqlTypeNames.STRING),                        
-            bigquery.SchemaField("doc_standard_date",
-                                    bigquery.enums.SqlTypeNames.DATE),
-            bigquery.SchemaField("doc_standard_link",
-                                    bigquery.enums.SqlTypeNames.STRING)
-        ]
+    if table_exists:
+        raise ValueError("Table already exists, please remove and retry")
+    
+    # Define the expected schema (for xbrl data)
+    schema = schema = [
+        bigquery.SchemaField("date", 
+                                bigquery.enums.SqlTypeNames.DATE),
+        bigquery.SchemaField("name",
+                                bigquery.enums.SqlTypeNames.STRING),
+        bigquery.SchemaField("unit",
+                                bigquery.enums.SqlTypeNames.STRING),
+        bigquery.SchemaField("value",
+                                bigquery.enums.SqlTypeNames.STRING),
+        bigquery.SchemaField("doc_name",
+                                bigquery.enums.SqlTypeNames.STRING),
+        bigquery.SchemaField("doc_type",
+                                bigquery.enums.SqlTypeNames.STRING),
+        bigquery.SchemaField("doc_upload_date",
+                                bigquery.enums.SqlTypeNames.TIMESTAMP), 
+        bigquery.SchemaField("arc_name",
+                                bigquery.enums.SqlTypeNames.STRING),
+        bigquery.SchemaField("parsed",
+                                bigquery.enums.SqlTypeNames.BOOLEAN),  
+        bigquery.SchemaField("doc_balancesheetdate",
+                                bigquery.enums.SqlTypeNames.DATE),                                                                                             
+        bigquery.SchemaField("doc_companieshouseregisterednumber",
+                                bigquery.enums.SqlTypeNames.STRING),
+        bigquery.SchemaField("doc_standard_type",
+                                bigquery.enums.SqlTypeNames.STRING),                        
+        bigquery.SchemaField("doc_standard_date",
+                                bigquery.enums.SqlTypeNames.DATE),
+        bigquery.SchemaField("doc_standard_link",
+                                bigquery.enums.SqlTypeNames.STRING)
+    ]
 
-        # Create the BigQuery table
-        table = bigquery.Table(bq_location, schema=schema)
-        table = client.create_table(table)
+    # Create the BigQuery table
+    table = bigquery.Table(bq_location, schema=schema)
+    table = client.create_table(table)
   
     
 def get_xbrl_files(event, context):
