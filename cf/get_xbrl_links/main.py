@@ -39,8 +39,11 @@ def collect_links(event, content):
 
     # Check if a test run is being done
     test_run = False
-    if "test" in event["attributes"].keys():
-        tes_run = eval(event["attributes"]["test"])
+    try:
+        if "test" in event["attributes"].keys():
+            tes_run = eval(event["attributes"]["test"])
+    except:
+        pass
     
     # If the scrape was successfull, parse the contents
     if status == 200:
