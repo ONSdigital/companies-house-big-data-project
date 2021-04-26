@@ -1,8 +1,8 @@
 import itertools
 import keras
-import matplotlib
-matplotlib.use('GTK3Agg')
-import matplotlib.pyplot as plt
+#import matplotlib
+#matplotlib.use('GTK3Agg')
+#import matplotlib.pyplot as plt
 #from matplotlib import pyplot as plt
 #import tkinter
 
@@ -29,7 +29,7 @@ from sklearn.metrics import confusion_matrix
 
 # Load the data from GCP
 #cha_data_raw = pd.read_csv("gs://basic_company_data_csvs/edited_basic_company_data_2020_12_01_part1_6.csv")
-cha_data_raw = pd.read_csv("gs://basic_company_data/diss_basic_comp_data.csv")
+cha_data_raw = pd.read_csv("gs://basic_company_data/700_sample_per_class.csv") #("gs://basic_company_data/diss_basic_comp_data.csv")
 # Create a copy
 cha_data = cha_data_raw.copy()
 print(cha_data)
@@ -76,7 +76,7 @@ print(f'X_train is after scaler {X_train.shape}')
 print(f'X_test is after scaler {X_test.shape}')
 
 # Creating the validation set
-validation_size = 1000
+validation_size = 560
 X_val_set = X_train[:validation_size]
 y_val_set = y_train[:validation_size]
 
@@ -85,8 +85,8 @@ X_train = X_train[validation_size:]
 y_train = y_train[validation_size:]
 
 # Converts a class vector (int) to binary class matrix
-y_train = np_utils.to_categorical(y_train, 5)
-y_test = np_utils.to_categorical(y_test, 5)
+y_train = np_utils.to_categorical(y_train, 4) #5)
+y_test = np_utils.to_categorical(y_test, 4) #5)
 
 #print(f'the shape of X_train = {X_train.shape}')
 #print(f'the shape of y_train before = {y_train.shape}')
@@ -112,15 +112,15 @@ print(f'the shape of model y_train = {y_train.shape}')
 # Structuring an initialising the NN
 nnetwork = Sequential()
 #nnetwork.add(Dropout(0.2, seed=42, input_shape=(total_input,)))
-nnetwork.add(Dense(input_shape=(658,), units=32, activation='relu')) # Need to change N
+nnetwork.add(Dense(input_shape=(314,), units=32, activation='relu')) # Need to change N
 #nnetwork.add(Dropout(0.1))
 nnetwork.add(Dense(units=16, activation='relu', name='hidden_layer_1'))
 nnetwork.add(Dense(units=8, activation='relu', name='hidden_layer_2'))
-nnetwork.add(Dense(units=5, activation='softmax', name='output_layer'))
+nnetwork.add(Dense(units=4, activation='softmax', name='output_layer'))
 
 # Compiling the ANN
 nnetwork.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy']) #'sparse_catergorical_crossentropy', 'adamax'
-nnetwork.fit(X_train, y_train, epochs=5)
+nnetwork.fit(X_train, y_train, epochs=24)
 print(nnetwork.summary())
 
 #num_epochs = 5
@@ -135,11 +135,6 @@ plt.title('Loss')
 #plt.savefig("diss.png")
 plt.show()
 
-"""
-plt.plot(nnetwork1.history['accuracy'])
-plt.title('Accuracy')
-plt.show()
-
 # Evaluating the algorithm
 test_accuracy = nnetwork.evaluate(X_test, y_test)
 
@@ -148,7 +143,15 @@ prediction[0]
 
 y_test[0]
 
-print(cha_data[''][np.argmax(prediction[0])])
+#print(cha_data['name'][np.argmax(prediction[0])])
+
+#Testing the model.
+test_loss, test_accuracy = nnetwork.evaluate(X_test, y_test)
+print(f'The test loss is {test_loss: 0.5} and the test accuracy is {test_accuracy: 0.1%}')
+"""
+plt.plot(nnetwork1.history['accuracy'])
+plt.title('Accuracy')
+plt.show()
 
 #Testing the model.
 test_loss, test_accuracy = nnetwork.evaluate(X_test, y_test)

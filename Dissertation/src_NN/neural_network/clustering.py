@@ -16,9 +16,6 @@ from sklearn.model_selection import train_test_split
 #%matplotlib inline
 
 
-
-#project_id = 'ons-companies-house-dev'
-
 # Read in the data
 df_raw = pd.read_csv("gs://basic_company_data/diss_basic_comp_data.csv")
 df = df_raw.copy()
@@ -53,7 +50,9 @@ scaler = MinMaxScaler()
 X_scaled = scaler.fit_transform(X)
 ## Add more scaled data?
 
-kmeans = KMeans(n_clusters=5) #the number of classes i.e. company categories
+wcss = []
+
+kmeans = KMeans(n_clusters=5, random_state=111) #the number of classes i.e. company categories
 kmeans.fit(X_scaled)
 
 label = kmeans.fit_predict(X_scaled)
@@ -62,7 +61,11 @@ print(label) #returns the array of cluster labels each data point belongs to
 
 plt.scatter(X_scaled[:, 0], X_scaled[:, 1], c=label,
             s=50, cmap='viridis')
+plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s=300,
+            c='yellow', label='centres')
 #plt.legend()
 #plt.interactive(False)
-plt.savefig("clustering.png")
+plt1 = plt.gcf()
+plt1.savefig("clustering2.png")
 #plt.show()
+#plt.close()
