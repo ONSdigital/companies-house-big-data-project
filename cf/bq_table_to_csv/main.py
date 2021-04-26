@@ -54,7 +54,7 @@ def export_csv(event, content):
                         'doc_standard_type',
                         'doc_standard_date', 'doc_standard_link'],)
     header.to_csv("gs://" + gcs_location + "/header_" + file_name + ".csv",
-                    header=True, index=False)
+                    header=True, index=False, sep="\t")
 
     # Specify the files to be combined
     split_files = [f.split("/", 1)[1] for f in fs.ls(gcs_location)
