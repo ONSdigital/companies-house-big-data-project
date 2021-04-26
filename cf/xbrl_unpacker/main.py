@@ -22,7 +22,7 @@ def unpack_xbrl_file(event, context):
     zip_path = event["attributes"]["zip_path"]
     xbrl_directory = event["attributes"]["xbrl_directory"]
 
-    bq_location = event["attributes"]["bq_location"]
+    table_export = event["attributes"]["table_export"]
     test_run = eval(event["attributes"]["test"])
     
     with zipfile.ZipFile(fs.open(zip_path), 'r') as zip_ref:
@@ -54,6 +54,6 @@ def unpack_xbrl_file(event, context):
         topic_path = publisher.topic_path("ons-companies-house-dev", "xbrl_parser_batches")
         data = str(xbrl_list).encode("utf-8")
         future = publisher.publish(
-            topic_path, data, xbrl_directory=xbrl_directory, table_export=bq_location
+            topic_path, data, xbrl_directory=xbrl_directory, table_export=table_export
         )
 

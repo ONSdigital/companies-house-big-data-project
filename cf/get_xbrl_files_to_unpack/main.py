@@ -152,6 +152,6 @@ def get_xbrl_files(event, context):
         data = str(contentfilename).encode("utf-8")
         future = publisher.publish(
           topic_path, data, xbrl_directory=xbrl_directory, zip_path=zip_path,
-          project=project, bq_location=bq_location, test=str(test_run)
+          project=project, table_export=table_export, test=str(test_run)
         )
         future.add_done_callback(callback)
