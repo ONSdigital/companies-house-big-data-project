@@ -83,7 +83,7 @@ def collect_links(event, content):
 
               # Publish a message to the relevant topic with arguments for which file to download
               future = publisher.publish(
-                topic_path, data, zip_path=zip_url, link_path=link, test=test_run
+                topic_path, data, zip_path=zip_url, link_path=link, test=str(test_run)
               )
               print(f"{link} is being downloaded")
             else:

@@ -49,7 +49,7 @@ def scrape_webpage(event, context):
     print("Saving zip file " + link + "...")
     blob.upload_from_string(zip_file, content_type="application/zip")
     
-    if not test_run:
+    if not eval(test_run):
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path("ons-companies-house-dev", "downloaded_zip_files")
         future = publisher.publish(
