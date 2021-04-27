@@ -416,8 +416,8 @@ class XbrlParser:
             #convert unknown values to support pandas.NA
             df_element_export = df_element_export.convert_dtypes()
             
-            date_cols = ['date','doc_balancesheetdate','doc_standard_date'] 
-            df_element_export[date_cols] = df_element_export[date_cols].fillna(None)
+            # date_cols = ['date','doc_balancesheetdate','doc_standard_date'] 
+            # df_element_export[date_cols] = df_element_export[date_cols].fillna(None)
              
             self.append_to_bq(df_element_export, bq_export)
 
