@@ -4,6 +4,7 @@ from dateutil import parser
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from google.cloud import storage
+#from google.api_core import retry
 import pandas as pd
 import os
 import csv
@@ -393,7 +394,6 @@ class XbrlParser:
 
             # Keep only the remaining columns and set dtypes
             df_element_export = df_element_export[wanted_cols]
-            df_element_export = df_element_export.convert_dtypes()
 
             # Set explicit data types for date columns - requirement for
             # BigQuery upload
@@ -412,8 +412,13 @@ class XbrlParser:
             df_element_export['doc_standard_date'] \
                 = pd.to_datetime(df_element_export['doc_standard_date'],
                                  format="%Y-%m-%d",
-                                 errors="coerce")            
+                                 errors="coerce")    
+            #convert unknown values to support pandas.NA
+            df_element_export = df_element_export.convert_dtypes()
             
+            date_cols = ['date','doc_balancesheetdate','doc_standard_date'] 
+            df_element_export[date_cols] = df_element_export[date_cols].fillna(None)
+             
             self.append_to_bq(df_element_export, bq_export)
 
             # Free up memory
@@ -694,16 +699,18 @@ class XbrlParser:
 
         # Convert Dataframe columns to string so they are JSON serializable
         df = df.astype(str)
+        # Create Retry condition (120 second retry deadline)
+        #my_retry = retry.Retry(deadline=120)
         
         # Make an API request.
         errors = client.insert_rows_json(
-            table, df.to_dict('records'), skip_invalid_rows=False
+            table, df.to_dict('records'), skip_invalid_rows=False,
             )
         # Print errors if any are returned
         if len(errors) > 0:
             try:
                 doc_name = df["doc_name"][0]
             except:
-                doc_name = "Unkown"
+                doc_name = "Unknown"
             print(f"Errors from bq upload for {doc_name}: {errors}")
  
