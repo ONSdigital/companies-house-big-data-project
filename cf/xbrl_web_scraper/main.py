@@ -7,7 +7,7 @@ import time
 
 from google.cloud import storage
 
-def scrape_webpage(event, context): # -> blob?
+def scrape_webpage(event: dict, context: google.cloud.functions.Context) -> None:
     """
     Cloud Function to be triggered by Pub/Sub.
     Downloads a link specified as a message attibute and saves to a 
@@ -19,6 +19,8 @@ def scrape_webpage(event, context): # -> blob?
                       of event (the event payload).
         context (google.cloud.functions.Context): The Cloud Functions
                       event metadata (the triggering event).
+    Trigger:
+        {run_xbrl_web_scraper}: Triggers the cloud function 'xbrl_web_scraper'.
     Returns:
         None
     Raises:
