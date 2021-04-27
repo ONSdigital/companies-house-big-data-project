@@ -9,7 +9,7 @@ import time
 from google.cloud import storage, pubsub_v1
 
 
-def collect_links(event, content) -> None:
+def collect_links(event: dict, context: google.cloud.functions.Context) -> None:
     """
     Cloud Function to be triggered by Pub/Sub.
     Scrapes target web page and sends the links of all
@@ -20,7 +20,7 @@ def collect_links(event, content) -> None:
         context (google.cloud.functions.Context): The Cloud Functions
                       event metadata (the triggering event).
     Trigger:
-        {run_xbrl_web_scraper}: Triggers the cloud function 'xbrl_web_scraper'.
+        {get_xbrl_downloads}: Triggers the cloud function 'get_xbrl_links'.
     Returns:
         None
     Raises:
