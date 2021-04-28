@@ -7,7 +7,7 @@ from google.cloud import pubsub_v1
 
 def callback(future):
     message_id = future.result()
-    print(message_id)
+    return message_id
 
 def unpack_xbrl_file(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
@@ -65,5 +65,5 @@ def unpack_xbrl_file(event, context):
         )
         future.add_done_callback(callback)
     
-    return None
+    return f"Finished {len(xbrl_list)} files!"
 
