@@ -5,6 +5,10 @@ import time
 import logging
 from google.cloud import pubsub_v1
 
+def callback(future):
+    message_id = future.result()
+    print(message_id)
+
 def unpack_xbrl_file(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
     Unpack a list of files specified in the pub/sub message from 
@@ -50,12 +54,16 @@ def unpack_xbrl_file(event, context):
             continue
     
     if not test_run:
-        publisher = pubsub_v1.PublisherClient()
+        ps_batching_settings = pubsub_v1.types.BatchSettings(
+        max_messages=1000
+        )
+        publisher = pubsub_v1.PublisherClient(batch_settings=ps_batching_settings)
         topic_path = publisher.topic_path("ons-companies-house-dev", "xbrl_parser_batches")
         data = str(xbrl_list).encode("utf-8")
         future = publisher.publish(
             topic_path, data, xbrl_directory=xbrl_directory, table_export=table_export
         )
+        future.add_done_callback(callback)
     
     return None
 
