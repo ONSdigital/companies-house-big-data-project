@@ -56,4 +56,6 @@ def unpack_xbrl_file(event, context):
         future = publisher.publish(
             topic_path, data, xbrl_directory=xbrl_directory, table_export=table_export
         )
+    
+    return None
 
