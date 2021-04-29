@@ -1,9 +1,39 @@
-from google.cloud import bigquery
-from google.cloud import storage
+from google.cloud import bigquery, storage
+import google.cloud.logging as gc_logs
 import pandas as pd
 import gcsfs
+import time
 
-def export_csv(event, content):
+def check_parser(event, content):
+    
+    # Cloud Function input arguments
+    bq_table = event["attributes"]["bq_table"]
+    gcs_location = event["attributes"]["gcs_location"]
+    file_name = event["attributes"]["file_name"]
+
+    n = event["attributes"]["num_files"]
+    x = event["attributes"]["num_batches"]
+    pipeline_start = event["attributes"]["start_time"]
+    retries = event["attributes"]["retries"]
+
+    t0 = time.time()
+    batches_parsed = 0
+
+    client = gc_logs.Client()
+
+    while ((time.time() - t0 <= 420) and (batches_parsed <= int(0.99*))):
+        log_query = f"""
+        resource.type = "cloud_function"
+        resource.labels.function_name = "xbrl_parser"
+        resource.labels.region = "europe-west2"
+        textPayload:"finished with status: 'ok'"
+        timestamp>={pipeline_start}
+        """
+        batches_parsed = len(client.list_entries(filter_=log_query, page_size=x+100))
+        time.sleep(5)
+
+
+def export_csv(bq_table, gcs_location, file_name):
     """
     Takes a specified BigQuery table and saves it as a single csv file
     (creates multiple csvs that partition the table as intermidiate steps)
@@ -19,14 +49,7 @@ def export_csv(event, content):
         None
     Raises:
         None
-
-    export_csv(self, bq_table, gcs_location, file_name)
     """
-    # Cloud Function input arguments
-    bq_table = event["attributes"]["bq_table"]
-    gcs_location = event["attributes"]["gcs_location"]
-    file_name = event["attributes"]["file_name"]
-
     # Set up GCP file system object
     fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
