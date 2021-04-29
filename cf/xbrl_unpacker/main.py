@@ -60,10 +60,10 @@ def unpack_xbrl_file(event, context):
         publisher = pubsub_v1.PublisherClient(batch_settings=ps_batching_settings)
         topic_path = publisher.topic_path("ons-companies-house-dev", "xbrl_parser_batches")
         data = str(xbrl_list).encode("utf-8")
-        future = publisher.publish(
+        publisher.publish(
             topic_path, data, xbrl_directory=xbrl_directory, table_export=table_export
-        )
-        future.add_done_callback(callback)
+        ).result()
+        # future.add_done_callback(callback)
     
     return f"Finished {len(xbrl_list)} files!"
 
