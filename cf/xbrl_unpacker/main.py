@@ -30,10 +30,10 @@ def unpack_xbrl_file(event, context):
     test_run = eval(event["attributes"]["test"])
     
     with zipfile.ZipFile(fs.open(zip_path), 'r') as zip_ref:
+      failed_files = []
       # For each file listed, download it to the specified location
       for xbrl_path in xbrl_list:
         upload_path = xbrl_directory + "/" + xbrl_path
-
         # Attempt to read the relevant file to be unpacked
         try:
             content_file = zip_ref.read(xbrl_path)
@@ -51,8 +51,22 @@ def unpack_xbrl_file(event, context):
                 )
         except:
             logging.warn(f"Unable to write to {upload_path}")
+            failed_files.append(xbrl_path)
             continue
     
+      for file in failed_files:
+          try:
+              content_file = zip_ref.read(file)
+              upload_path = xbrl_directory + "/" + xbrl_path
+              with fs.open(upload_path, 'wb') as f:
+                  f.write(content_file)
+              fs.setxattrs(upload_path, 
+              content_type="text/"+xbrl_path.split(".")[-1]
+              )
+          except:
+              logging.warn(f"Unable to retry file {upload_path}")
+              continue
+            
     if not test_run:
         ps_batching_settings = pubsub_v1.types.BatchSettings(
         max_messages=1000
