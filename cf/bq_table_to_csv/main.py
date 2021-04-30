@@ -15,7 +15,7 @@ def check_parser(event, content):
     resource.labels.region = "europe-west2"
     textPayload:"Saving zip file"
     """
-    scraper_log_entry = client.list_entries(filter_=scraper_log_query, order_by='DESCENDING')
+    scraper_log_entry = client.list_entries(filter_=scraper_log_query, order_by=gc_logs.DESCENDING)
     #find last log entry
     scraper_last_entry = next(scraper_log_entry)
 
@@ -31,7 +31,7 @@ def check_parser(event, content):
     resource.labels.region = "europe-west2"
     textPayload:"Unpacking"
     """
-    unpack_log_entry = client.list_entries(filter_=unpack_log_query, order_by='DESCENDING')
+    unpack_log_entry = client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING)
     #find last log entry
     unpack_last_entry = next(unpack_log_entry)
 
