@@ -17,12 +17,12 @@ def check_parser(event, content):
     """
     scraper_log_entry = client.list_entries(filter_=scraper_log_query)
     #find last log entry
-    scraper_last_entry = next(log_entry)
+    scraper_last_entry = next(scraper_log_entry)
 
-    payload = last_entry.payload
-    file_name = payload[16,-7]
+    payload = scraper_last_entry.payload
+    file_name = payload[16:-7]
     bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
-    timestamp = last_entry.timestamp
+    timestamp = scraper_last_entry.timestamp
 
     # find log of get_xbrl_files_to_unpack to determine number of files
     unpack_log_query = f"""
@@ -33,9 +33,9 @@ def check_parser(event, content):
     """
     unpack_log_entry = client.list_entries(filter_=unpack_log_query)
     #find last log entry
-    unpack_last_entry = next(log_entry)
+    unpack_last_entry = next(unpack_log_entry)
 
-    no_files_unzipped = int(last_entry.payload.split(" ")[1])
+    no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
 
     #   Query BQ table to check no of files parsed
     bq_database = "ons-companies-house-dev.xbrl_parsed_data"
