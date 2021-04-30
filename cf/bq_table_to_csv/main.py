@@ -5,33 +5,60 @@ import gcsfs
 import time
 
 def check_parser(event, content):
-    
-    # Cloud Function input arguments
-    bq_table = event["attributes"]["bq_table"]
-    gcs_location = event["attributes"]["gcs_location"]
-    file_name = event["attributes"]["file_name"]
-
-    n = event["attributes"]["num_files"]
-    x = event["attributes"]["num_batches"]
-    pipeline_start = event["attributes"]["start_time"]
-    retries = event["attributes"]["retries"]
-
-    t0 = time.time()
-    batches_parsed = 0
 
     client = gc_logs.Client()
 
-    while ((time.time() - t0 <= 420) and (batches_parsed <= int(0.99*))):
-        log_query = f"""
-        resource.type = "cloud_function"
-        resource.labels.function_name = "xbrl_parser"
-        resource.labels.region = "europe-west2"
-        textPayload:"finished with status: 'ok'"
-        timestamp>={pipeline_start}
-        """
-        batches_parsed = len(client.list_entries(filter_=log_query, page_size=x+100))
-        time.sleep(5)
+    # find log of web scraper - extract file name
+    scraper_log_query = f"""
+    resource.type = "cloud_function"
+    resource.labels.function_name = "xbrl_web_scraper"
+    resource.labels.region = "europe-west2"
+    textPayload:"Saving zip file"
+    """
+    scraper_log_entry = client.list_entries(filter_=scraper_log_query)
+    #find last log entry
+    scraper_last_entry = next(log_entry)
 
+    payload = last_entry.payload
+    file_name = payload[16,-7]
+    bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
+    timestamp = last_entry.timestamp
+
+    # find log of get_xbrl_files_to_unpack to determine number of files
+    unpack_log_query = f"""
+    resource.type = "cloud_function"
+    resource.labels.function_name = "get_xbrl_files_to_unpack"
+    resource.labels.region = "europe-west2"
+    textPayload:"Unpacking"
+    """
+    unpack_log_entry = client.list_entries(filter_=unpack_log_query)
+    #find last log entry
+    unpack_last_entry = next(log_entry)
+
+    no_files_unzipped = int(last_entry.payload.split(" ")[1])
+
+    #   Query BQ table to check no of files parsed
+    bq_database = "ons-companies-house-dev.xbrl_parsed_data"
+    table_id = bq_database+"."+bq_table_name
+
+    sql_query = """SELECT COUNT(DISTINCT(doc_name)) FROM `{}`""".format(table_id)
+
+    df = pd.read_gbq(sql_query, 
+                     dialect='standard')
+
+    files_processed = int(df.iloc[0,0])
+
+    # Compare no of processed files to expected
+    error_rate = 0.01
+    if (1 - error_rate)*no_files_unzipped  >= files_processed:
+        raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
+
+    else:
+        # Define input arguments for export csv
+        gcs_location = "ons-companies-house-dev-test-parsed-csv-data/cloud_functions_test"
+        csv_name =  file_name[-4:] + "-" + file_name[22:-4] + "_xbrl_data"
+        export_csv(table_id, gcs_location,csv_name)
+        
 
 def export_csv(bq_table, gcs_location, file_name):
     """
