@@ -3,7 +3,19 @@ import google.cloud.logging as gc_logs
 import pandas as pd
 import gcsfs
 import time
+import datetime as dt
+import pytz
 
+utc=pytz.UTC
+
+client = gc_logs.Client()
+# find log of web scraper - extract file name
+scraper_log_query = f"""
+resource.type = "cloud_function"
+resource.labels.function_name = "get_xbrl_files_to_unpack"
+resource.labels.region = "europe-west2"
+textPayload:"Unpacking"
+"""
 def check_parser(event, content):
 
     client = gc_logs.Client()
@@ -22,7 +34,7 @@ def check_parser(event, content):
     payload = scraper_last_entry.payload
     file_name = payload[16:-7]
     bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
-    timestamp = scraper_last_entry.timestamp
+    scraper_timestamp = scraper_last_entry.timestamp
 
     # find log of get_xbrl_files_to_unpack to determine number of files
     unpack_log_query = f"""
@@ -34,6 +46,7 @@ def check_parser(event, content):
     unpack_log_entry = client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING)
     #find last log entry
     unpack_last_entry = next(unpack_log_entry)
+    unpack_timestamp = unpack_last_entry.timestamp
 
     no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
 
@@ -52,6 +65,12 @@ def check_parser(event, content):
     error_rate = 0.01
     if (1 - error_rate)*no_files_unzipped  >= files_processed:
         raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
+
+    # Ensure files have been unpacked in last 30 mins
+    export_time = utc.localize(dt.datetime.today())
+    timeframe = dt.timedelta(minutes=30)
+    if export_time > unpack_time + timeframe:
+        raise RuntimeError("The xbrl_unpacker was last ran over 30 mins ago, please rerun the unpacker and try again.")
 
     else:
         # Define input arguments for export csv
