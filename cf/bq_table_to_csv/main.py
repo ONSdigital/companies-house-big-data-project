@@ -49,7 +49,7 @@ def check_parser(event, content):
     files_processed = int(df.iloc[0,0])
 
     # Compare no of processed files to expected
-    error_rate = 0.01
+    error_rate = 0.001
     if (1 - error_rate)*no_files_unzipped  >= files_processed:
         raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
 
