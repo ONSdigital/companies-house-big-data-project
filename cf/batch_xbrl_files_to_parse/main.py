@@ -94,19 +94,19 @@ def batch_files(event, context):
     bq_location = "xbrl_parsed_data"
     csv_location = "ons-companies-house-dev-test-parsed-csv-data/cloud_functions_test"
 
-    all_files = fs.ls(xbrl_directory)
+    all_files = [file.split("/")[-1] for file in fs.ls(xbrl_directory)]
 
     # Constained to 1500 BQ uploads per table per day (may be outdated
     # due to streaming solution)
     min_batch_size = len(all_files)//1400
 
     # Set the batch size
-    n = 350
+    n = 200
 
-    if n < min_batch_size:
-        raise ValueError(
-            "Batch size is too small (will exceed BQ max uploads)"
-    )
+    #if n < min_batch_size:
+    #    raise ValueError(
+    #        "Batch size is too small (will exceed BQ max uploads)"
+    #)
 
     # Extract the relevant date information from the directory name
     folder_month = "".join(xbrl_directory.split("/")[-1].split("-")[1:])[0:-4]

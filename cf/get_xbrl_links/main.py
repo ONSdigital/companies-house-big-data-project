@@ -36,6 +36,14 @@ def collect_links(event, content):
 
     #txt = res.text
     status = res.status_code
+
+    # Check if a test run is being done
+    test_run = False
+    try:
+        if "test" in event["attributes"].keys():
+            tes_run = eval(event["attributes"]["test"])
+    except:
+        pass
     
     # If the scrape was successfull, parse the contents
     if status == 200:
@@ -75,7 +83,7 @@ def collect_links(event, content):
 
               # Publish a message to the relevant topic with arguments for which file to download
               future = publisher.publish(
-                topic_path, data, zip_path=zip_url, link_path=link
+                topic_path, data, zip_path=zip_url, link_path=link, test=str(test_run)
               )
               print(f"{link} is being downloaded")
             else:
