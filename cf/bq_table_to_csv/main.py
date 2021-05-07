@@ -34,18 +34,18 @@ def check_parser(event, content):
     bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
     timestamp = scraper_last_entry.timestamp
 
-    # # find log of get_xbrl_files_to_unpack to determine number of files
-    # unpack_log_query = f"""
-    # resource.type = "cloud_function"
-    # resource.labels.function_name = "get_xbrl_files_to_unpack"
-    # resource.labels.region = "europe-west2"
-    # textPayload:"Unpacking"
-    # """
-    # unpack_log_entry = client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING)
-    # #find last log entry
-    # unpack_last_entry = next(unpack_log_entry)
+    # find log of get_xbrl_files_to_unpack to determine number of files
+    unpack_log_query = f"""
+    resource.type = "cloud_function"
+    resource.labels.function_name = "get_xbrl_files_to_unpack"
+    resource.labels.region = "europe-west2"
+    textPayload:"Unpacking"
+    """
+    unpack_log_entry = client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING)
+    #find last log entry
+    unpack_last_entry = next(unpack_log_entry)
 
-    # no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
+    no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
 
     #   Query BQ table to check no of files parsed
     bq_database = "ons-companies-house-dev.xbrl_parsed_data"
@@ -57,8 +57,6 @@ def check_parser(event, content):
                      dialect='standard')
 
     files_processed = int(df.iloc[0,0])
-
-    no_files_unzipped = 200
 
     # Compare no of processed files to expected
     error_rate = 0.001
