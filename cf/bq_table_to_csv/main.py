@@ -1,9 +1,66 @@
-from google.cloud import bigquery
-from google.cloud import storage
+from google.cloud import bigquery, storage
+import google.cloud.logging as gc_logs
 import pandas as pd
 import gcsfs
+import time
 
-def export_csv(event, content):
+def check_parser(event, content):
+
+    client = gc_logs.Client()
+
+    # find log of web scraper - extract file name
+    scraper_log_query = f"""
+    resource.type = "cloud_function"
+    resource.labels.function_name = "xbrl_web_scraper"
+    resource.labels.region = "europe-west2"
+    textPayload:"Saving zip file"
+    """
+    scraper_log_entry = client.list_entries(filter_=scraper_log_query, order_by=gc_logs.DESCENDING)
+    #find last log entry
+    scraper_last_entry = next(scraper_log_entry)
+
+    payload = scraper_last_entry.payload
+    file_name = payload[16:-7]
+    bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
+    timestamp = scraper_last_entry.timestamp
+
+    # find log of get_xbrl_files_to_unpack to determine number of files
+    unpack_log_query = f"""
+    resource.type = "cloud_function"
+    resource.labels.function_name = "get_xbrl_files_to_unpack"
+    resource.labels.region = "europe-west2"
+    textPayload:"Unpacking"
+    """
+    unpack_log_entry = client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING)
+    #find last log entry
+    unpack_last_entry = next(unpack_log_entry)
+
+    no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
+
+    #   Query BQ table to check no of files parsed
+    bq_database = "ons-companies-house-dev.xbrl_parsed_data"
+    table_id = bq_database+"."+bq_table_name
+
+    sql_query = """SELECT COUNT(DISTINCT(doc_name)) FROM `{}`""".format(table_id)
+
+    df = pd.read_gbq(sql_query, 
+                     dialect='standard')
+
+    files_processed = int(df.iloc[0,0])
+
+    # Compare no of processed files to expected
+    error_rate = 0.001
+    if (1 - error_rate)*no_files_unzipped  >= files_processed:
+        raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
+
+    else:
+        # Define input arguments for export csv
+        gcs_location = "ons-companies-house-dev-test-parsed-csv-data/cloud_functions_test"
+        csv_name =  file_name[-4:] + "-" + file_name[22:-4] + "_xbrl_data"
+        export_csv(table_id, gcs_location,csv_name)
+        
+
+def export_csv(bq_table, gcs_location, file_name):
     """
     Takes a specified BigQuery table and saves it as a single csv file
     (creates multiple csvs that partition the table as intermidiate steps)
@@ -19,14 +76,7 @@ def export_csv(event, content):
         None
     Raises:
         None
-
-    export_csv(self, bq_table, gcs_location, file_name)
     """
-    # Cloud Function input arguments
-    bq_table = event["attributes"]["bq_table"]
-    gcs_location = event["attributes"]["gcs_location"]
-    file_name = event["attributes"]["file_name"]
-
     # Set up GCP file system object
     fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
