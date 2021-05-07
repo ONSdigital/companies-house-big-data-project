@@ -63,15 +63,14 @@ def check_parser(event, content):
     # Compare no of processed files to expected
     error_rate = 0.001
     if (1 - error_rate)*no_files_unzipped  >= files_processed:
-        print(f"The number of files processed is less than 99 percent of the expected ({files_processed} out of {no_files_unzipped})
-         retrying in {retry_wait} seconds")
+        print(f"The number of files processed is less than 99 percent of the expected ({files_processed} out of {no_files_unzipped}) retrying in {retry_wait} seconds")
         
         retry_count += 1
 
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path("ons-companies-house-dev", "export_bq_table")
         data = "Delayed retry".encode("utf-8")
-        future = publisher.publish(topic_path, data, retry_count=retry_count)
+        publisher.publish(topic_path, data, retry_count=retry_count).result()
         
 
     else:
