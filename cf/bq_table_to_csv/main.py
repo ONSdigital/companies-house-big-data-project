@@ -1,13 +1,23 @@
-from google.cloud import bigquery, storage
+from google.cloud import bigquery, storage, pubsub_v1
 import google.cloud.logging as gc_logs
 import pandas as pd
 import gcsfs
 import time
 
 def check_parser(event, content):
+    retry_count = int(event["attributes"]["retry_count"])
+    
+    max_retries = 2
+    retry_wait = 300
 
+    if retry_count > max_retries:
+        raise RuntimeError(
+            f"bq_table_to_csv has been retried {max_retries} times and has still failed to execute."
+        )
+    if retry_count > 0:
+        time.sleep(retry_wait)
+    
     client = gc_logs.Client()
-
     # find log of web scraper - extract file name
     scraper_log_query = f"""
     resource.type = "cloud_function"
@@ -24,18 +34,18 @@ def check_parser(event, content):
     bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
     timestamp = scraper_last_entry.timestamp
 
-    # find log of get_xbrl_files_to_unpack to determine number of files
-    unpack_log_query = f"""
-    resource.type = "cloud_function"
-    resource.labels.function_name = "get_xbrl_files_to_unpack"
-    resource.labels.region = "europe-west2"
-    textPayload:"Unpacking"
-    """
-    unpack_log_entry = client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING)
-    #find last log entry
-    unpack_last_entry = next(unpack_log_entry)
+    # # find log of get_xbrl_files_to_unpack to determine number of files
+    # unpack_log_query = f"""
+    # resource.type = "cloud_function"
+    # resource.labels.function_name = "get_xbrl_files_to_unpack"
+    # resource.labels.region = "europe-west2"
+    # textPayload:"Unpacking"
+    # """
+    # unpack_log_entry = client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING)
+    # #find last log entry
+    # unpack_last_entry = next(unpack_log_entry)
 
-    no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
+    # no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
 
     #   Query BQ table to check no of files parsed
     bq_database = "ons-companies-house-dev.xbrl_parsed_data"
@@ -48,10 +58,21 @@ def check_parser(event, content):
 
     files_processed = int(df.iloc[0,0])
 
+    no_files_unzipped = 200
+
     # Compare no of processed files to expected
     error_rate = 0.001
     if (1 - error_rate)*no_files_unzipped  >= files_processed:
-        raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
+        print(f"The number of files processed is less than 99 percent of the expected ({files_processed} out of {no_files_unzipped})
+         retrying in {retry_wait} seconds")
+        
+        retry_count += 1
+
+        publisher = pubsub_v1.PublisherClient()
+        topic_path = publisher.topic_path("ons-companies-house-dev", "export_bq_table")
+        data = "Delayed retry".encode("utf-8")
+        future = publisher.publish(topic_path, data, retry_count=retry_count)
+        
 
     else:
         # Define input arguments for export csv
