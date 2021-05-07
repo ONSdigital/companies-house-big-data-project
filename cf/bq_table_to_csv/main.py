@@ -54,10 +54,23 @@ def check_parser(event, content):
         raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
 
     else:
+
+        # Set up GCP file system object
+        fs = gcsfs.GCSFileSystem(cache_timeout=0)
+
         # Define input arguments for export csv
         gcs_location = "ons-companies-house-dev-test-parsed-csv-data/cloud_functions_test"
         csv_name =  file_name[-4:] + "-" + file_name[22:-4] + "_xbrl_data"
-        export_csv(table_id, gcs_location,csv_name)
+
+        # Retrieve a list of all files at the location specified
+        file_list = [filename.split("/")[-1] for filename in fs.ls(gcs_location)]
+
+        # Raise an error if the csv file does not exist
+        if csv_name not in file_list:
+            raise RuntimeError("The csv file " + csv_name + " does not exist at the location specified ( " + gcs_location + " )")
+        
+        else:
+            export_csv(table_id, gcs_location, csv_name)
         
 
 def export_csv(bq_table, gcs_location, file_name):
@@ -128,3 +141,25 @@ def export_csv(bq_table, gcs_location, file_name):
                 ((f.split("/")[-1]).startswith("header_" + file_name))
                 ])
 
+
+def temp():
+
+    # Set up GCP file system object
+    fs = gcsfs.GCSFileSystem(cache_timeout=0)
+
+    # Define input arguments for export csv
+    gcs_location = "ons-companies-house-dev-test-parsed-csv-data/cloud_functions_test"
+    #csv_name =  file_name[-4:] + "-" + file_name[22:-4] + "_xbrl_data"
+
+    file_list = [filename.split("/")[-1] for filename in fs.ls(gcs_location)]
+
+    print(file_list)
+
+    csv_name = 'export_csv_March221.csv'
+
+    if csv_name not in file_list:
+        raise RuntimeError("The csv file " + csv_name + " does not exist at the location specified ( " + gcs_location + " )")
+    else:
+        print("All well!")
+
+temp()
