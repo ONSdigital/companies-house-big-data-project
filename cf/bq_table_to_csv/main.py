@@ -1,4 +1,4 @@
-from google.cloud import bigquery, storage
+from google.cloud import bigquery, storage, pubsub_v1
 import google.cloud.logging as gc_logs
 import pandas as pd
 import gcsfs
@@ -7,10 +7,22 @@ import datetime as dt
 import pytz
 
 def check_parser(event, content):
+    retry_count = int(event["attributes"]["retry_count"])
+    
+    max_retries = 2
+    retry_wait = 300
+
+    if retry_count > max_retries:
+        raise RuntimeError(
+            f"bq_table_to_csv has been retried {max_retries} times and has still failed to execute."
+        )
+    if retry_count > 0:
+        time.sleep(retry_wait)
+        
     utc=pytz.UTC
     client = gc_logs.Client()
-
-    # Find log of web scraper - extract file name
+    
+    # find log of web scraper - extract file name
     scraper_log_query = f"""
     resource.type = "cloud_function"
     resource.labels.function_name = "xbrl_web_scraper"
@@ -53,8 +65,17 @@ def check_parser(event, content):
     # Compare no of processed files to expected
     error_rate = 0.001
     if (1 - error_rate)*no_files_unzipped  >= files_processed:
+
+        print(f"The number of files processed is less than 99 percent of the expected ({files_processed} out of {no_files_unzipped}) retrying in {retry_wait} seconds")
+        
+        retry_count += 1
+
+        publisher = pubsub_v1.PublisherClient()
+        topic_path = publisher.topic_path("ons-companies-house-dev", "export_bq_table")
+        data = "Delayed retry".encode("utf-8")
+        publisher.publish(topic_path, data, retry_count=str(retry_count)).result()
+        
         raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
-    
     
     # Ensure files have been unpacked in last 30 mins
     export_time = utc.localize(dt.datetime.today())
