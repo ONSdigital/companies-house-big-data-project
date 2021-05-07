@@ -3,6 +3,8 @@ import google.cloud.logging as gc_logs
 import pandas as pd
 import gcsfs
 import time
+import datetime as dt
+import pytz
 
 def check_parser(event, content):
     retry_count = int(event["attributes"]["retry_count"])
@@ -16,8 +18,10 @@ def check_parser(event, content):
         )
     if retry_count > 0:
         time.sleep(retry_wait)
-    
+        
+    utc=pytz.UTC
     client = gc_logs.Client()
+    
     # find log of web scraper - extract file name
     scraper_log_query = f"""
     resource.type = "cloud_function"
@@ -26,15 +30,15 @@ def check_parser(event, content):
     textPayload:"Saving zip file"
     """
     scraper_log_entry = client.list_entries(filter_=scraper_log_query, order_by=gc_logs.DESCENDING)
-    #find last log entry
+    # Find last log entry
     scraper_last_entry = next(scraper_log_entry)
 
     payload = scraper_last_entry.payload
     file_name = payload[16:-7]
     bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
-    timestamp = scraper_last_entry.timestamp
+    scraper_timestamp = scraper_last_entry.timestamp
 
-    # find log of get_xbrl_files_to_unpack to determine number of files
+    # Find log of get_xbrl_files_to_unpack to determine number of files
     unpack_log_query = f"""
     resource.type = "cloud_function"
     resource.labels.function_name = "get_xbrl_files_to_unpack"
@@ -42,12 +46,12 @@ def check_parser(event, content):
     textPayload:"Unpacking"
     """
     unpack_log_entry = client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING)
-    #find last log entry
+    # Find last log entry
     unpack_last_entry = next(unpack_log_entry)
 
     no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
 
-    #   Query BQ table to check no of files parsed
+    # Query BQ table to check no of files parsed
     bq_database = "ons-companies-house-dev.xbrl_parsed_data"
     table_id = bq_database+"."+bq_table_name
 
@@ -61,6 +65,7 @@ def check_parser(event, content):
     # Compare no of processed files to expected
     error_rate = 0.001
     if (1 - error_rate)*no_files_unzipped  >= files_processed:
+
         print(f"The number of files processed is less than 99 percent of the expected ({files_processed} out of {no_files_unzipped}) retrying in {retry_wait} seconds")
         
         retry_count += 1
@@ -70,6 +75,14 @@ def check_parser(event, content):
         data = "Delayed retry".encode("utf-8")
         publisher.publish(topic_path, data, retry_count=str(retry_count)).result()
         
+        raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
+    
+    # Ensure files have been unpacked in last 30 mins
+    export_time = utc.localize(dt.datetime.today())
+    timeframe = dt.timedelta(minutes=30)
+
+    if export_time > scraper_timestamp + timeframe:
+        raise RuntimeError("The xbrl_web_scraper was last ran over 30 mins ago, please rerun and try again.")
 
     else:
         # Define input arguments for export csv
