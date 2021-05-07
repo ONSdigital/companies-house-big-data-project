@@ -94,7 +94,7 @@ def batch_files(event, context):
     bq_location = "xbrl_parsed_data"
     csv_location = "ons-companies-house-dev-test-parsed-csv-data/cloud_functions_test"
 
-    all_files = fs.ls(xbrl_directory)
+    all_files = [file.split("/")[-1] for file in fs.ls(xbrl_directory)]
 
     # Constained to 1500 BQ uploads per table per day (may be outdated
     # due to streaming solution)

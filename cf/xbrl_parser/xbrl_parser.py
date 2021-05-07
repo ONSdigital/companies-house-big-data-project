@@ -394,31 +394,30 @@ class XbrlParser:
 
             # Keep only the remaining columns and set dtypes
             df_element_export = df_element_export[wanted_cols]
-            # Define error handling method
-#             error = "ignore"
-#             # Set explicit data types for date columns - requirement for
-#             # BigQuery upload
-#             df_element_export['doc_upload_date'] = pd.to_datetime(
-#                 df_element_export['doc_upload_date'],
-#                 errors=error)
-#             df_element_export['doc_upload_date'] = df_element_export['doc_upload_date'].astype("str")
-#             df_element_export['date'] \
-#                 = pd.to_datetime(df_element_export['date'],
-#                                  format="%Y-%m-%d",
-#                                  errors=error)
-#             df_element_export['doc_balancesheetdate'] \
-#                 = pd.to_datetime(df_element_export['doc_balancesheetdate'],
-#                                  format="%Y-%m-%d",
-#                                  errors=error)
-#             df_element_export['doc_standard_date'] \
-#                 = pd.to_datetime(df_element_export['doc_standard_date'],
-#                                  format="%Y-%m-%d",
-#                                  errors=error)    
-#             #convert unknown values to support pandas.NA
-#             df_element_export = df_element_export.convert_dtypes()
+
+            # Set explicit data types for date columns - requirement for
+            # BigQuery upload
+            # df_element_export['doc_upload_date'] = pd.to_datetime(
+            #     df_element_export['doc_upload_date'],
+            #     errors="coerce")
+            # df_element_export['doc_upload_date'] = df_element_export['doc_upload_date'].astype("str")
+            # df_element_export['date'] \
+            #     = pd.to_datetime(df_element_export['date'],
+            #                      format="%Y-%m-%d",
+            #                      errors="coerce")
+            # df_element_export['doc_balancesheetdate'] \
+            #     = pd.to_datetime(df_element_export['doc_balancesheetdate'],
+            #                      format="%Y-%m-%d",
+            #                      errors="coerce")
+            # df_element_export['doc_standard_date'] \
+            #     = pd.to_datetime(df_element_export['doc_standard_date'],
+            #                      format="%Y-%m-%d",
+            #                      errors="coerce")    
+            # #convert unknown values to support pandas.NA
+            # df_element_export = df_element_export.convert_dtypes()
             
-            #date_cols = ['date','doc_balancesheetdate','doc_standard_date'] 
-            #df_element_export[date_cols] = df_element_export[date_cols].fillna(None)
+            # date_cols = ['date','doc_balancesheetdate','doc_standard_date'] 
+            # df_element_export[date_cols] = df_element_export[date_cols].fillna(None)
              
             self.append_to_bq(df_element_export, bq_export)
 
@@ -599,8 +598,7 @@ class XbrlParser:
 
         return directory_list
 
-    def parse_files(self, files_list, directory, table_export,
-                        processed_path):
+    def parse_files(self, files_list, directory, table_export):
         """
         Takes a list of files and a directory, parses all files contained there 
         and exports them as a BigQuery table in a specified location.
@@ -616,14 +614,14 @@ class XbrlParser:
             None
         """
         # Process all the files in the list of files
-        results, fails = self.combine_batch_data(files_list)
+        results, fails = self.combine_batch_data(files_list, directory)
 
         # Retry unparsed files
         if len(fails) > 0:
             # Check enough time is left
             if time.time() - self.t0 < 420:
                 # Retry failed files
-                results0, fails0 = self.combine_batch_data(fails)
+                results0, fails0 = self.combine_batch_data(fails, directory)
                 results += results0
                 fails = fails0
             print(f"{fails} files did not parse")
@@ -634,7 +632,7 @@ class XbrlParser:
         return None
 
    
-    def combine_batch_data(self, filenames):
+    def combine_batch_data(self, filenames, directory):
         """
         For each xbrl file in a given list of file names, try to process
         it and append the result to a list.
@@ -654,7 +652,8 @@ class XbrlParser:
         fails = []
 
         # Loop over all the files listed
-        for filepath in filenames:
+        for file in filenames:
+            filepath = directory + "/" + file
             if self.fs.exists(filepath):
                 # If the file exists try and process it
                 try:

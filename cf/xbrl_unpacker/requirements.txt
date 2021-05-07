@@ -1,4 +1,6 @@
 # Function dependencies, for example:
 # package>=version
 bs4>=0.0.1
-gcsfs>=0.7.2
+gcsfs>=2021.04.0
+google-cloud-pubsub>=2.4.0
+google-cloud-bigquery==2.8.0
