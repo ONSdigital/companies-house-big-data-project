@@ -70,7 +70,7 @@ def check_parser(event, content):
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path("ons-companies-house-dev", "export_bq_table")
         data = "Delayed retry".encode("utf-8")
-        publisher.publish(topic_path, data, retry_count=retry_count).result()
+        publisher.publish(topic_path, data, retry_count=str(retry_count)).result()
         
 
     else:
