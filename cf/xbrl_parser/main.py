@@ -26,7 +26,7 @@ def parse_batch(event, context):
     # Ignore events that are too old
     max_age = 900
     if event_age > max_age:
-        print('Dropped {} (age {}s)'.format(context.event_id, event_age_ms))
+        print('Dropped {} (age {}s)'.format(context.event_id, event_age))
         return 'Timeout'
     # Create parser class instance
     parser = XbrlParser()
