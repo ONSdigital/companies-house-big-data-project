@@ -26,6 +26,9 @@ class TableFitter(TableIdentifier):
         self.date_headers = []
         self.unit_headers = []
 
+
+    def __getitem__(self, i):
+        return f"Value {i}"
         
     def clean_values(self, chars = ["\n"]):
         """
@@ -47,6 +50,7 @@ class TableFitter(TableIdentifier):
         self.notes_row = [i for i in self.data.index
                           if self.data.loc[i, "value"].lower()
                           in ["note", "notes"]]
+                    
         self.assets_row = [i for i in self.data.index
                            if "asset" in self.data.loc[i, "value"].lower()]
     
@@ -206,13 +210,13 @@ class TableFitter(TableIdentifier):
         """
 
         # Set the current line we are considering - start with notes line
-        l = self.data.loc[self.notes_row[0], "line_num"]
+        l = self.data.loc[self.notes_row[0], "line_num"] 
         
-
-        # Add the notes line to the relevant variables
+        # Add the notes line to the relevant variables  
         header_lines = [l]
         header_indices = list(self.data[self.data["line_num"] == l].index)
 
+        
         # Look for other header rows below the 'notes' row
         while l < self.total_lines:
             l += 1

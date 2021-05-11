@@ -124,8 +124,21 @@ class Table2Df:
         Raises:
             None
         """
-        self.data_cols = [i+1 for i,g in enumerate(self.table.header_groups) if self.table.notes_row[0] not in g]
-        data_cols = [i+1 for i,g in enumerate(self.table.header_groups) if self.table.notes_row[0] not in g]
+     
+        
+        #Converts column "column" into a sorted list and removes the unlabled first column
+        column_list =  list(self.table.data["column"])
+        column_set = set(column_list)
+        sorted_column = list(column_set)
+        sorted_column = [int(x) for x in sorted_column]
+        sorted_column.sort()
+        sorted_column.pop(0)
+        self.table.data.loc[self.table.notes_row, "column"]
+
+        
+        
+        self.data_cols = [i+1 for i,g in enumerate(sorted_column) if int(self.table.data.loc[self.table.notes_row, "column"])  != g]
+        data_cols = [i+1 for i,g in enumerate(sorted_column) if int(self.table.data.loc[self.table.notes_row, "column"])  != g]
 
         currencies = [self.data.loc[i, "value"] for i in self.table.header_indices if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
