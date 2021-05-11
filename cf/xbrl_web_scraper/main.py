@@ -17,10 +17,10 @@ def scrape_webpage(event, context):
          data      
             None/not used
          attributes 
-            zip_path:   url of where one given .zip file is saved
-            link_path:  filename for .zip file
+            zip_path:   url of where one given .zip file is saved.
+            link_path:  filename for .zip file.
             test_run:   boolean string of whether to trigger unpacker
-                        after completion
+                        after completion.
         ---------------------------
         context (google.cloud.functions.Context): Metadata for the event.
     Returns:

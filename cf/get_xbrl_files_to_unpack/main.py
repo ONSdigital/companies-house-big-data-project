@@ -87,8 +87,16 @@ def get_xbrl_files(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
     Sends all files to be unpacked within a .zip file as pubsub messages.
     Args:
-         event (dict): Event payload.
-         context (google.cloud.functions.Context): Metadata for the event.
+        event (dict): Event payload.
+        ----------------------------
+        data
+            None/not used
+        attributes
+            zip_path:   GCS location of the file to be unpacked.
+            test_run:   boolean string of whether to trigger parser
+                        after completion.
+        ----------------------------
+        context (google.cloud.functions.Context): Metadata for the event.
     """
     # Extract desired attributes from the message payload
     zip_path = event["attributes"]["zip_path"]

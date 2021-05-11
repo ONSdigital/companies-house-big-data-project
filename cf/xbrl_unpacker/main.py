@@ -5,17 +5,24 @@ import time
 import logging
 from google.cloud import pubsub_v1
 
-def callback(future):
-    message_id = future.result()
-    return message_id
 
 def unpack_xbrl_file(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
     Unpack a list of files specified in the pub/sub message from 
     a given .zip file
     Args:
-         event (dict): Event payload.
-         context (google.cloud.functions.Context): Metadata for the event.
+        event (dict): Event payload.
+        ---------------------------
+        data
+            List of zip files (names only) to be unpacked.
+        attributes
+            zip_path:       GCS location of .zip file.
+            xbrl_directory: Directory to save unpacked files.
+            table_export:   Location of final BigQuery table.
+            test_run:       Boolean string of whether to trigger parser
+                            after completion.
+        ---------------------------
+        context (google.cloud.functions.Context): Metadata for the event.
     """
     # Create a GCSFS object
     fs = gcsfs.GCSFileSystem(cache_timeout=0)
@@ -53,6 +60,7 @@ def unpack_xbrl_file(event, context):
             logging.warn(f"Unable to write to {upload_path}")
             continue
     
+    # Trigger the parser using on the same batch (providing it is not a test run)
     if not test_run:
         ps_batching_settings = pubsub_v1.types.BatchSettings(
         max_messages=1000
@@ -63,7 +71,6 @@ def unpack_xbrl_file(event, context):
         publisher.publish(
             topic_path, data, xbrl_directory=xbrl_directory, table_export=table_export
         ).result()
-        # future.add_done_callback(callback)
     
     return f"Finished {len(xbrl_list)} files!"
 
