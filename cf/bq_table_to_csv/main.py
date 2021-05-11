@@ -85,10 +85,23 @@ def check_parser(event, content):
         raise RuntimeError("The xbrl_web_scraper was last ran over 30 mins ago, please rerun and try again.")
 
     else:
+
+        # Set up GCP file system object
+        fs = gcsfs.GCSFileSystem(cache_timeout=0)
+
         # Define input arguments for export csv
         gcs_location = "ons-companies-house-dev-test-parsed-csv-data/cloud_functions_test"
         csv_name =  file_name[-4:] + "-" + file_name[22:-4] + "_xbrl_data"
-        export_csv(table_id, gcs_location,csv_name)
+
+        # Retrieve a list of all files at the location specified
+        file_list = [filename.split("/")[-1] for filename in fs.ls(gcs_location)]
+
+        # Raise an error if the csv file already exists
+        if csv_name in file_list:
+            raise RuntimeError("The csv file " + csv_name + " already exists at the location specified ( " + gcs_location + " )")
+        
+        else:
+            export_csv(table_id, gcs_location, csv_name)
         
 
 def export_csv(bq_table, gcs_location, file_name):
@@ -158,4 +171,3 @@ def export_csv(bq_table, gcs_location, file_name):
                 if ((f.split("/")[-1]).startswith(file_name + "0")) or
                 ((f.split("/")[-1]).startswith("header_" + file_name))
                 ])
-
