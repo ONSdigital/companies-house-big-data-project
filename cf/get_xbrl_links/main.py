@@ -14,6 +14,10 @@ def collect_links(event, content):
     zip files found to the pub/sub topic 'run_xbrl_web_scraper'.
     Arguments:
         event (dict): Event payload.
+        ---------------------------
+            data:       None
+            attributes: None
+        ---------------------------
         context (google.cloud.functions.Context): Metadata for the event.
     Returns:
         None
@@ -28,13 +32,14 @@ def collect_links(event, content):
         base_url = "http://download.companieshouse.gov.uk/"
         dir_to_save = "ons-companies-house-dev-xbrl-scraped-data/requests_scraper_test_folder"
     """
+
     url = "http://download.companieshouse.gov.uk/en_monthlyaccountsdata.html"
     base_url = "http://download.companieshouse.gov.uk/"
     dir_to_save = "ons-companies-house-dev-xbrl-scraped-data"
     
+    # Get url data via a get request
     res = requests.get(url)
 
-    #txt = res.text
     status = res.status_code
 
     # Check if a test run is being done
@@ -47,6 +52,7 @@ def collect_links(event, content):
     
     # If the scrape was successfull, parse the contents
     if status == 200:
+        # Set up objects for pub/sub message publishing
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path("ons-companies-house-dev", "run_xbrl_web_scraper")
 
@@ -62,15 +68,19 @@ def collect_links(event, content):
         # Filter out files that are not zip
         links = [link for link in links if link[-4:] == ".zip"]
 
+        # Set up storage client for zip destination
         storage_client = storage.Client()
         bucket = storage_client.bucket(dir_to_save.split("/")[0])
 
         print(f"{len(links)} have been scraped from the page.")
+
+        downloads_count = 0
+
         # Download and save zip files
         for link in links:
-
             zip_url = base_url + link
 
+            # Sort out GCS formatting
             if "/" in link: 
                 link = link.split("/")[-1]
                 blob = bucket.blob("/".join(dir_to_save.split("/")[1:]) + "/" + link)
@@ -79,17 +89,25 @@ def collect_links(event, content):
 
             # Only download and save a file if it doesn't exist in the directory
             if not blob.exists():
-              data = "Zip file to download: {}".format(link).encode("utf-8")
+                downloads_count += 1
+                data = "Zip file to download: {}".format(link).encode("utf-8")
 
-              # Publish a message to the relevant topic with arguments for which file to download
-              future = publisher.publish(
-                topic_path, data, zip_path=zip_url, link_path=link, test=str(test_run)
-              )
-              print(f"{link} is being downloaded")
+                # Publish a message to the relevant topic with arguments for which file to download
+                publisher.publish(
+                    topic_path, data, zip_path=zip_url, link_path=link, test=str(test_run)
+                ).result()
+                print(f"{link} is being downloaded")
             else:
-             print(f"{link} has already been downloaded")
+                print(f"{link} has already been downloaded")
             
+            # Sleep for random time to not overwhelm server
             time.sleep((random.random() * 2.0) + 3.0)
+        
+        # Check at least one file has been downloaded
+        if downloads_count == 0:
+            raise RuntimeError(
+                f"No zip files were downloaded - check a new one is present at {url}"
+        )
     else:
         # Report Stackdriver error
         raise RuntimeError(
