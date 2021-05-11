@@ -124,19 +124,12 @@ class Table2Df:
         Raises:
             None
         """
-     
-        
-        #Converts column "column" into a sorted list and removes the unlabled first column
-        column_list =  list(self.table.data["column"])
-        column_set = set(column_list)
-        sorted_column = list(column_set)
+        #Converts "column" column into a sorted unique list and removes the unlabeled first column
+        sorted_column = list(set(self.table.data["column"]))
         sorted_column = [int(x) for x in sorted_column]
         sorted_column.sort()
         sorted_column.pop(0)
-        self.table.data.loc[self.table.notes_row, "column"]
-
-        
-        
+    
         self.data_cols = [i+1 for i,g in enumerate(sorted_column) if int(self.table.data.loc[self.table.notes_row, "column"])  != g]
         data_cols = [i+1 for i,g in enumerate(sorted_column) if int(self.table.data.loc[self.table.notes_row, "column"])  != g]
 
@@ -186,6 +179,7 @@ class Table2Df:
                 self.df.loc[index, "name"] = self.data[(self.data["line_num"]==l)&(self.data["column"]==0)].iloc[0]["value"]
             except:
                 self.df.loc[index, "name"] = None
+                
         
         # Only save the relevant columns
         self.df = self.df[["name", "value", "date", "unit"]]

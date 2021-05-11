@@ -50,6 +50,11 @@ class TableFitter(TableIdentifier):
         self.notes_row = [i for i in self.data.index
                           if self.data.loc[i, "value"].lower()
                           in ["note", "notes"]]
+       # if len(self.notes_row) == 0 :#look for currency
+         #  if self.notes_row = self.date_headers  
+
+                          
+
                     
         self.assets_row = [i for i in self.data.index
                            if "asset" in self.data.loc[i, "value"].lower()]
@@ -212,6 +217,11 @@ class TableFitter(TableIdentifier):
         # Set the current line we are considering - start with notes line
         l = self.data.loc[self.notes_row[0], "line_num"] 
         
+        #if (len(self.notes_row) != 0):
+            #       l = self.data.loc[self.notes_row[0], "line_num"] 
+            #    else:
+            #       l = self.get_other_columns_v2
+
         # Add the notes line to the relevant variables  
         header_lines = [l]
         header_indices = list(self.data[self.data["line_num"] == l].index)
