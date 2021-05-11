@@ -90,19 +90,11 @@ def get_xbrl_files(event, context):
          event (dict): Event payload.
          context (google.cloud.functions.Context): Metadata for the event.
     """
-    # Check if a test run is being done
-    test_run = False
-    try:
-        if "test" in event["attributes"].keys():
-            tes_run = eval(event["attributes"]["test"])
-    except:
-        pass
-
     # Extract desired attributes from the message payload
     zip_path = event["attributes"]["zip_path"]
-
     bq_location = "xbrl_parsed_data"
     project = "ons-companies-house-dev"
+    test_run = event["attributes"]["test"]
 
     # Create a GCSFS object
     fs = gcsfs.GCSFileSystem(cache_timeout=0)
@@ -115,6 +107,12 @@ def get_xbrl_files(event, context):
 
     # Specify the directory where unpacked files should be saved
     xbrl_directory = "ons-companies-house-dev-xbrl-unpacked-data/cloud_functions_test/" + (zip_path.split("/")[-1]).split(".")[0]
+
+    # Check the directory to save to doesn't already exist
+    if fs.exists(xbrl_directory + "/"):
+        raise ValueError(
+        f"The directory {xbrl_directory} already exists. Please remove and retry"
+    )
 
     # Extract the relevant date information from the directory name
     folder_month = "".join(xbrl_directory.split("/")[-1].split("-")[1:])[0:-4]
@@ -139,19 +137,19 @@ def get_xbrl_files(event, context):
     n = 200
 
     with zipfile.ZipFile(fs.open(zip_path), 'r') as zip_ref:
-      
-      # Compile all files within the .zip and separate them into batches of
-      # size n
-      zip_list = zip_ref.namelist()
-      names = [zip_list[i*n : (i+1)*n] for i in range((len(zip_list) + n - 1)//n)]
+        # Compile all files within the .zip and separate them into batches of
+        # size n
+        zip_list = zip_ref.namelist()
+        names = [zip_list[i*n : (i+1)*n] for i in range((len(zip_list) + n - 1)//n)]
 
-      print(f"Unpacking {len(zip_list)} files using batches of size {n}")
-      
-      # For each batch, publish a message with the list of files to be unpacked
-      for i, contentfilename in enumerate(names):
-        data = str(contentfilename).encode("utf-8")
-        future = publisher.publish(
-          topic_path, data, xbrl_directory=xbrl_directory, zip_path=zip_path,
-          project=project, table_export=table_export, test=str(test_run)
-        )
-        future.add_done_callback(callback)
+        print(f"Unpacking {len(zip_list)} files using batches of size {n}")
+        
+        # For each batch, publish a message with the list of files to be unpacked as
+        # the message data.
+        for i, contentfilename in enumerate(names):
+            data = str(contentfilename).encode("utf-8")
+            future = publisher.publish(
+            topic_path, data, xbrl_directory=xbrl_directory, zip_path=zip_path,
+            project=project, table_export=table_export, test=test_run
+            )
+            future.add_done_callback(callback)
