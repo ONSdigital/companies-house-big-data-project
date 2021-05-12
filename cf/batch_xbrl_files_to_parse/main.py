@@ -96,7 +96,7 @@ def batch_files(event, context):
         data
             None/not used
         attributes
-            xbrl_directory: GCS location where .zip file is saved
+            xbrl_directory: GCS location where unpacked files are saved.
         ----------------------------
         context (google.cloud.functions.Context): Metadata for the event.
     Returns:
