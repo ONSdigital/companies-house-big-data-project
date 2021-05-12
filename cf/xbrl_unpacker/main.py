@@ -3,6 +3,8 @@ import gcsfs
 import zipfile
 import time
 import logging
+from datetime import datetime, timezone
+from dateutil import parser as date_parser
 from google.cloud import pubsub_v1
 
 def callback(future):
@@ -17,6 +19,17 @@ def unpack_xbrl_file(event, context):
          event (dict): Event payload.
          context (google.cloud.functions.Context): Metadata for the event.
     """
+    timestamp = context.timestamp
+
+    event_time = date_parser.parse(timestamp)
+    event_age = (datetime.now(timezone.utc) - event_time).total_seconds()
+
+    # Ignore events that are too old
+    max_age = 900
+    if event_age > max_age:
+        print('Dropped {} (age {}s)'.format(context.event_id, event_age))
+        return 'Timeout'
+    
     # Create a GCSFS object
     fs = gcsfs.GCSFileSystem(cache_timeout=0)
 

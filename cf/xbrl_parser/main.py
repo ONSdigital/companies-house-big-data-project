@@ -1,5 +1,7 @@
 import base64
 import gcsfs
+from datetime import datetime, timezone
+from dateutil import parser as date_parser
 
 from xbrl_parser import XbrlParser
 
@@ -16,6 +18,16 @@ def parse_batch(event, context):
     Raises:
         None
     """
+    timestamp = context.timestamp
+
+    event_time = date_parser.parse(timestamp)
+    event_age = (datetime.now(timezone.utc) - event_time).total_seconds()
+
+    # Ignore events that are too old
+    max_age = 900
+    if event_age > max_age:
+        print('Dropped {} (age {}s)'.format(context.event_id, event_age))
+        return 'Timeout'
     # Create parser class instance
     parser = XbrlParser()
 
