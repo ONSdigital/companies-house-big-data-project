@@ -86,7 +86,7 @@ def check_parser(event, content):
         )
 
     # Loop through scraper entries
-    for entry, i in enumerate(scraper_entries[num_exported:]):
+    for i, entry in enumerate(scraper_entries[num_exported:]):
         # Extract relevant variables from the log entry
         payload = entry.payload
         file_name = payload[16:-7]
