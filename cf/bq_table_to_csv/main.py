@@ -7,18 +7,42 @@ import datetime as dt
 import pytz
 
 def check_parser(event, content):
+    """
+    Checks parser has run successfully and calls export_csv if
+    so.
+    Parses a given list of files (as pub/sub message data) and
+    saves the result to a BigQuery table and as a .csv
+
+    Arguments:
+        event (dict): Event payload.
+        ----------------------------
+        data
+            None/not used
+        attributes
+            retry_count: Number of function retries before this is triggered.
+        ----------------------------
+        context (google.cloud.functions.Context): Metadata for the event.
+    Returns:
+        None
+    Raises:
+        None
+    """
+    # Extract and set up retry arguments
     retry_count = int(event["attributes"]["retry_count"])
     
     max_retries = 2
     retry_wait = 300
-
+    
+    # If we have exceeded the max retries raise a runtime error. (This does not 
+    # affect the usual cloud functions retry as we handle retries manually)
     if retry_count > max_retries:
         raise RuntimeError(
             f"bq_table_to_csv has been retried {max_retries} times and has still failed to execute."
         )
+    # Add a time delay between retries.
     if retry_count > 0:
         time.sleep(retry_wait)
-        
+    
     utc=pytz.UTC
     client = gc_logs.Client()
     
@@ -33,12 +57,13 @@ def check_parser(event, content):
     # Find last log entry
     scraper_last_entry = next(scraper_log_entry)
 
+    # Extract relevant variables from the log entry
     payload = scraper_last_entry.payload
     file_name = payload[16:-7]
     bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
     scraper_timestamp = scraper_last_entry.timestamp
 
-    # Find log of get_xbrl_files_to_unpack to determine number of files
+    # Find log of get_xbrl_files_to_unpack to determine number of files extracted
     unpack_log_query = f"""
     resource.type = "cloud_function"
     resource.labels.function_name = "get_xbrl_files_to_unpack"
@@ -51,12 +76,11 @@ def check_parser(event, content):
 
     no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
 
-    # Query BQ table to check no of files parsed
+    # Query BQ table to check number of files parsed
     bq_database = "ons-companies-house-dev.xbrl_parsed_data"
     table_id = bq_database+"."+bq_table_name
-
+    # SQL query to find number of files in dataset
     sql_query = """SELECT COUNT(DISTINCT(doc_name)) FROM `{}`""".format(table_id)
-
     df = pd.read_gbq(sql_query, 
                      dialect='standard')
 
@@ -64,12 +88,15 @@ def check_parser(event, content):
 
     # Compare no of processed files to expected
     error_rate = 0.001
-    if (1 - error_rate)*no_files_unzipped  >= files_processed:
 
+    # If not enough files have been parsed, retry using pub/sub
+    if (1 - error_rate)*no_files_unzipped  >= files_processed:
         print(f"The number of files processed is less than 99 percent of the expected ({files_processed} out of {no_files_unzipped}) retrying in {retry_wait} seconds")
         
+        # Record number of retries
         retry_count += 1
 
+        # Re-triggger check_parser via pub/sub
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path("ons-companies-house-dev", "export_bq_table")
         data = "Delayed retry".encode("utf-8")
@@ -83,9 +110,9 @@ def check_parser(event, content):
 
     if export_time > scraper_timestamp + timeframe:
         raise RuntimeError("The xbrl_web_scraper was last ran over 30 mins ago, please rerun and try again.")
-
+    
+    # If previous checks have passed, convert table to a csv
     else:
-
         # Set up GCP file system object
         fs = gcsfs.GCSFileSystem(cache_timeout=0)
 

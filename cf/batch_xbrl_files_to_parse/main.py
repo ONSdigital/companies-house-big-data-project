@@ -6,6 +6,19 @@ from google.cloud import bigquery
 
 
 def callback(future):
+    """
+    Function to allow the callback of the publishing 
+    of a pub/sub message to be handled outside of the main
+    function.
+
+    Arguments
+        future: publisher.publish object for publishing a message
+                to a topic
+    Returns:
+        None
+    Raises:
+        None
+    """
     message_id = future.result()
     print(message_id)
 
@@ -79,6 +92,12 @@ def batch_files(event, context):
 
     Arguments:
         event (dict): Event payload.
+        ----------------------------
+        data
+            None/not used
+        attributes
+            xbrl_directory: GCS location where unpacked files are saved.
+        ----------------------------
         context (google.cloud.functions.Context): Metadata for the event.
     Returns:
         None
@@ -87,7 +106,7 @@ def batch_files(event, context):
     """
     fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
-    # Set necessary variables
+    # Retrieve and set necessary variables
     xbrl_directory = event["attributes"]["xbrl_directory"]
 
     project = "ons-companies-house-dev"
@@ -96,17 +115,8 @@ def batch_files(event, context):
 
     all_files = [file.split("/")[-1] for file in fs.ls(xbrl_directory)]
 
-    # Constained to 1500 BQ uploads per table per day (may be outdated
-    # due to streaming solution)
-    min_batch_size = len(all_files)//1400
-
     # Set the batch size
     n = 200
-
-    #if n < min_batch_size:
-    #    raise ValueError(
-    #        "Batch size is too small (will exceed BQ max uploads)"
-    #)
 
     # Extract the relevant date information from the directory name
     folder_month = "".join(xbrl_directory.split("/")[-1].split("-")[1:])[0:-4]
@@ -121,6 +131,7 @@ def batch_files(event, context):
     # Batch the filenames in a list of lists of size n
     batched_files = [all_files[i*n : (i+1)*n] for i in range((len(all_files) + n - 1)//n)]
 
+    # Configure publisher settings and create a client
     print(f"Parsing files in {len(batched_files)} batches")
     ps_batching_settings = pubsub_v1.types.BatchSettings(
         max_messages=1000
@@ -128,6 +139,7 @@ def batch_files(event, context):
     publisher = pubsub_v1.PublisherClient(batch_settings=ps_batching_settings)
     topic_path = publisher.topic_path("ons-companies-house-dev", "xbrl_parser_batches")
     
+    # Trigger the xbrl_parser for each batch of files
     for batch in batched_files:
         data = str(batch).encode("utf-8")
         future = publisher.publish(
