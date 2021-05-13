@@ -30,7 +30,8 @@ def check_parser(event, content):
     # Extract and set up retry arguments
     retry_count = int(event["attributes"]["retry_count"])
     num_exported = int(event["attributes"]["num_exported"])
-    
+    time_diff = int(event["attributes"]["logs_delay"])
+
     max_retries = 2
     retry_wait = 300
     
@@ -47,7 +48,7 @@ def check_parser(event, content):
     utc=pytz.UTC
     client = gc_logs.Client()
 
-    time_diff = 30
+    
     min_time = utc.localize(dt.datetime.today()) - dt.timedelta(minutes=time_diff)
     min_time = min_time.strftime("%Y-%m-%dT%H:%M:%S")
     
@@ -119,7 +120,7 @@ def check_parser(event, content):
             publisher = pubsub_v1.PublisherClient()
             topic_path = publisher.topic_path("ons-companies-house-dev", "export_bq_table")
             data = "Delayed retry".encode("utf-8")
-            publisher.publish(topic_path, data, retry_count=str(retry_count), num_exported=str(i)).result()
+            publisher.publish(topic_path, data, retry_count=str(retry_count), num_exported=str(i), logs_delay = str(time_diff)).result()
             
             raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
         
