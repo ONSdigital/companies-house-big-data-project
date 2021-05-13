@@ -128,11 +128,12 @@ class Table2Df:
         sorted_column = list(set(self.table.data["column"]))
         sorted_column = [int(x) for x in sorted_column]
         sorted_column.sort()
-        sorted_column.pop(0)
-    
-        self.data_cols = [i+1 for i,g in enumerate(sorted_column) if int(self.table.data.loc[self.table.notes_row, "column"])  != g]
-        data_cols = [i+1 for i,g in enumerate(sorted_column) if int(self.table.data.loc[self.table.notes_row, "column"])  != g]
-
+        if self.table.notes_tf:
+            sorted_column.pop(0)
+        
+        self.data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
+        data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
+                
         currencies = [self.data.loc[i, "value"] for i in self.table.header_indices if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         currency = max(set(currencies), key=currencies.count)

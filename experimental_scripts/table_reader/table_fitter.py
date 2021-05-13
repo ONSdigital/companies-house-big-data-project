@@ -9,12 +9,15 @@ from table_identifier import TableIdentifier
 from doc_ai_parser import DocParser
 
 
+
 class TableFitter(TableIdentifier):
     def __init__(self, df):
         TableIdentifier.__init__(self, df)
         self.columns = []
         self.notes_row = []
         self.assets_row = []
+        self.dates_row = []
+        self.currency_row = []
 
         # Header properties
         self.header_indices = []
@@ -42,6 +45,18 @@ class TableFitter(TableIdentifier):
         Raises:
             None
         """
+        currency_indexes = [i for i in self.data.index if
+                            len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
+        self.unit_headers = currency_indexes
+
+        years = range(1999,2025)        
+        date_indexes = []        
+        for i in self.data.index:
+            contains_year = any([str(y) == self.data.loc[i, "value"].strip() for y in years])#add check for at most 2 
+            if contains_year:
+                date_indexes.append(i)
+        date_headers = date_indexes
+        #check for notes check for dates !0 > 2 then currency 
         for char in chars:
             self.data["value"] = self.data["value"].str\
                         .replace(char, '')
@@ -50,7 +65,13 @@ class TableFitter(TableIdentifier):
         self.notes_row = [i for i in self.data.index
                           if self.data.loc[i, "value"].lower()
                           in ["note", "notes"]]
-                
+        self.notes_tf = len(self.notes_row) != 0                          
+        # if len(self.notes_row) == 0 :#look for currency
+        # if self.notes_row = self.date_headers  
+        self.dates_row = date_headers
+        #print(self.dates_row, "dates_row")
+        print (self.data.loc[date_headers,"value"], date_headers)
+
         self.assets_row = [i for i in self.data.index
                            if "asset" in self.data.loc[i, "value"].lower()]
     
@@ -208,14 +229,19 @@ class TableFitter(TableIdentifier):
         Raises:
             None
         """
-
+        print(self.dates_row," dates row") 
         # Set the current line we are considering - start with notes line
-        l = self.data.loc[self.notes_row[0], "line_num"] 
+        #l = self.data.loc[self.notes_row[0], "line_num"] 
+        if (len(self.notes_row) != 0):
+            l = self.data.loc[self.notes_row[0], "line_num"]   
+        else:
+            l  = self.dates_row[0] #
+            self.notes_row = self.dates_row
 
         # Add the notes line to the relevant variables  
         header_lines = [l]
         header_indices = list(self.data[self.data["line_num"] == l].index)
-
+        
         
         # Look for other header rows below the 'notes' row
         while l < self.total_lines:
@@ -231,9 +257,14 @@ class TableFitter(TableIdentifier):
                 header_indices += \
                     list(self.data[self.data["line_num"] == l].index)
 
-        # Start from the 'notes' line and look for header rows above
-        l = self.data.loc[self.notes_row[0], "line_num"]
-
+        # Start from the 'notes' line and look for header rows above 
+        #l = self.data.loc[self.notes_row[0], "line_num"]      
+        if (len(self.notes_row) != 0):
+            l = self.data.loc[self.notes_row[0], "line_num"]     
+        else:
+            l  = self.dates_row[0]
+            self.notes_row = self.dates_row
+    
         y0 = stats.median(self.data[self.data["line_num"] == l]["first_y_vertex"])
         y1 = 0
         while l > min(self.data["line_num"]):
