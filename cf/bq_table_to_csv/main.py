@@ -29,6 +29,7 @@ def check_parser(event, content):
     """
     # Extract and set up retry arguments
     retry_count = int(event["attributes"]["retry_count"])
+    num_exported = int(event["attributes"]["num_exported"])
     
     max_retries = 2
     retry_wait = 300
@@ -45,6 +46,10 @@ def check_parser(event, content):
     
     utc=pytz.UTC
     client = gc_logs.Client()
+
+    time_diff = 30
+    min_time = utc.localize(dt.datetime.today()) - dt.timedelta(minutes=time_diff)
+    min_time = min_time.strftime("%Y-%m-%dT%H:%M:%S")
     
     # find log of web scraper - extract file name
     scraper_log_query = f"""
@@ -52,16 +57,17 @@ def check_parser(event, content):
     resource.labels.function_name = "xbrl_web_scraper"
     resource.labels.region = "europe-west2"
     textPayload:"Saving zip file"
+    timestamp >= "{min_time}"
     """
-    scraper_log_entry = client.list_entries(filter_=scraper_log_query, order_by=gc_logs.DESCENDING)
-    # Find last log entry
-    scraper_last_entry = next(scraper_log_entry)
+    # List relevant scraper entries
+    scraper_entries = list(client.list_entries(filter_=scraper_log_query, order_by=gc_logs.DESCENDING))
 
-    # Extract relevant variables from the log entry
-    payload = scraper_last_entry.payload
-    file_name = payload[16:-7]
-    bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
-    scraper_timestamp = scraper_last_entry.timestamp
+    # Check we have obtained relevant entries
+    if len(scraper_entries) == 0:
+        raise RuntimeError(
+            "bq_table_to_csv could not find relevant files from log entries"
+        )
+    print(f"{scraper_entries} are being exported")
 
     # Find log of get_xbrl_files_to_unpack to determine number of files extracted
     unpack_log_query = f"""
@@ -69,50 +75,54 @@ def check_parser(event, content):
     resource.labels.function_name = "get_xbrl_files_to_unpack"
     resource.labels.region = "europe-west2"
     textPayload:"Unpacking"
+    timestamp >= "{min_time}"
     """
-    unpack_log_entry = client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING)
-    # Find last log entry
-    unpack_last_entry = next(unpack_log_entry)
-
-    no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
-
-    # Query BQ table to check number of files parsed
-    bq_database = "ons-companies-house-dev.xbrl_parsed_data"
-    table_id = bq_database+"."+bq_table_name
-    # SQL query to find number of files in dataset
-    sql_query = """SELECT COUNT(DISTINCT(doc_name)) FROM `{}`""".format(table_id)
-    df = pd.read_gbq(sql_query, 
-                     dialect='standard')
-
-    files_processed = int(df.iloc[0,0])
-
-    # Compare no of processed files to expected
-    error_rate = 0.001
-
-    # If not enough files have been parsed, retry using pub/sub
-    if (1 - error_rate)*no_files_unzipped  >= files_processed:
-        print(f"The number of files processed is less than 99 percent of the expected ({files_processed} out of {no_files_unzipped}) retrying in {retry_wait} seconds")
-        
-        # Record number of retries
-        retry_count += 1
-
-        # Re-triggger check_parser via pub/sub
-        publisher = pubsub_v1.PublisherClient()
-        topic_path = publisher.topic_path("ons-companies-house-dev", "export_bq_table")
-        data = "Delayed retry".encode("utf-8")
-        publisher.publish(topic_path, data, retry_count=str(retry_count)).result()
-        
-        raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
+    unpacker_entries = list(client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING))
     
-    # Ensure files have been unpacked in last 30 mins
-    export_time = utc.localize(dt.datetime.today())
-    timeframe = dt.timedelta(minutes=30)
+    # Check scraper and unpacker entries match up
+    if len(unpacker_entries) != len(scraper_entries):
+        raise RuntimeError(
+            "Unpacker log entries do not match scraper log entries. Inspect logs for more detail."
+        )
 
-    if export_time > scraper_timestamp + timeframe:
-        raise RuntimeError("The xbrl_web_scraper was last ran over 30 mins ago, please rerun and try again.")
-    
-    # If previous checks have passed, convert table to a csv
-    else:
+    # Loop through scraper entries
+    for entry, i in enumerate(scraper_entries[num_exported:]):
+        # Extract relevant variables from the log entry
+        payload = entry.payload
+        file_name = payload[16:-7]
+        bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
+        
+        no_files_unzipped = int(unpacker_entries[i].payload.split(" ")[1])
+
+        # Query BQ table to check number of files parsed
+        bq_database = "ons-companies-house-dev.xbrl_parsed_data"
+        table_id = bq_database+"."+bq_table_name
+
+        # SQL query to find number of files in dataset
+        sql_query = """SELECT COUNT(DISTINCT(doc_name)) FROM `{}`""".format(table_id)
+        df = pd.read_gbq(sql_query, 
+                        dialect='standard')
+
+        files_processed = int(df.iloc[0,0])
+
+        # Compare no of processed files to expected
+        error_rate = 0.001
+
+        # If not enough files have been parsed, retry using pub/sub
+        if (1 - error_rate)*no_files_unzipped  >= files_processed:
+            print(f"The number of files processed is less than 99 percent of the expected ({files_processed} out of {no_files_unzipped}) retrying in {retry_wait} seconds")
+            
+            # Record number of retries
+            retry_count += 1
+
+            # Re-triggger check_parser via pub/sub
+            publisher = pubsub_v1.PublisherClient()
+            topic_path = publisher.topic_path("ons-companies-house-dev", "export_bq_table")
+            data = "Delayed retry".encode("utf-8")
+            publisher.publish(topic_path, data, retry_count=str(retry_count), num_exported=str(i)).result()
+            
+            raise RuntimeError("The number of files processed is less than 99 percent of the expected ({} out of {})".format(files_processed,no_files_unzipped))
+        
         # Set up GCP file system object
         fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
@@ -126,10 +136,10 @@ def check_parser(event, content):
         # Raise an error if the csv file already exists
         if csv_name in file_list:
             raise RuntimeError("The csv file " + csv_name + " already exists at the location specified ( " + gcs_location + " )")
-        
+        # If previous checks have passed, convert table to a csv
         else:
             export_csv(table_id, gcs_location, csv_name)
-        
+            
 
 def export_csv(bq_table, gcs_location, file_name):
     """
