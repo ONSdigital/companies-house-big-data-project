@@ -67,7 +67,7 @@ def check_parser(event, content):
         raise RuntimeError(
             "bq_table_to_csv could not find relevant files from log entries"
         )
-    print(f"{scraper_entries} are being exported")
+    print(f"{len(scraper_entries)} files are being exported")
 
     # Find log of get_xbrl_files_to_unpack to determine number of files extracted
     unpack_log_query = f"""
@@ -91,7 +91,7 @@ def check_parser(event, content):
         payload = entry.payload
         file_name = payload[16:-7]
         bq_table_name = file_name[22:-4] + "-" + file_name[-4:]
-        
+
         no_files_unzipped = int(unpacker_entries[i].payload.split(" ")[1])
 
         # Query BQ table to check number of files parsed
