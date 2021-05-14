@@ -117,7 +117,7 @@ def check_parser(event, content):
         fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
         # Define input arguments for export csv
-        gcs_location = "ons-companies-house-dev-test-parsed-csv-data/cloud_functions_test"
+        gcs_location = "ons-companies-house-dev-xbrl-parsed-data"
         csv_name =  file_name[-4:] + "-" + file_name[22:-4] + "_xbrl_data"
 
         # Retrieve a list of all files at the location specified
