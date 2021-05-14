@@ -111,7 +111,7 @@ def batch_files(event, context):
 
     project = "ons-companies-house-dev"
     bq_location = "xbrl_parsed_data"
-    csv_location = "ons-companies-house-dev-test-parsed-csv-data/cloud_functions_test"
+    csv_location = "ons-companies-house-dev-xbrl-parsed-data"
 
     all_files = [file.split("/")[-1] for file in fs.ls(xbrl_directory)]
 
