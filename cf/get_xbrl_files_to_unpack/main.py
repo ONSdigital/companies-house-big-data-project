@@ -114,7 +114,7 @@ def get_xbrl_files(event, context):
     )
 
     # Specify the directory where unpacked files should be saved
-    xbrl_directory = "ons-companies-house-dev-xbrl-unpacked-data/cloud_functions_test/" + (zip_path.split("/")[-1]).split(".")[0]
+    xbrl_directory = "ons-companies-house-dev-xbrl-unpacked-data/" + (zip_path.split("/")[-1]).split(".")[0]
 
     # Check the directory to save to doesn't already exist
     if fs.exists(xbrl_directory + "/"):
