@@ -45,32 +45,34 @@ class TableFitter(TableIdentifier):
         Raises:
             None
         """
+        # if len(self.notes_row) == 0 :#look for currency
+        # Set class attributes for the indices where we find specific values
+        #notes row aquisition 
+        self.notes_row = [i for i in self.data.index
+                          if self.data.loc[i, "value"].lower()
+                          in ["note", "notes"]]
+        self.notes_tf = len(self.notes_row) != 0  
+
+        years = range(1999,2025)        
+        date_indexes = []        
+        #check for notes check for dates !0 > 2 then currency 
+        #date_x =0
+        for i in self.data.index:
+            contains_year = any([str(y) == self.data.loc[i, "value"].strip() for y in years]) 
+            if contains_year:# and date_x <=2:#add check for at most 2 
+                date_indexes.append(i)
+                #date_x+=1
+        date_headers = date_indexes
+        self.dates_row = date_headers
+        print(self.dates_row,"dates row")
+
         currency_indexes = [i for i in self.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         self.unit_headers = currency_indexes
 
-        years = range(1999,2025)        
-        date_indexes = []        
-        for i in self.data.index:
-            contains_year = any([str(y) == self.data.loc[i, "value"].strip() for y in years])#add check for at most 2 
-            if contains_year:
-                date_indexes.append(i)
-        date_headers = date_indexes
-        #check for notes check for dates !0 > 2 then currency 
         for char in chars:
             self.data["value"] = self.data["value"].str\
                         .replace(char, '')
-
-        # Set class attributes for the indices where we find specific values
-        self.notes_row = [i for i in self.data.index
-                          if self.data.loc[i, "value"].lower()
-                          in ["note", "notes"]]
-        self.notes_tf = len(self.notes_row) != 0                          
-        # if len(self.notes_row) == 0 :#look for currency
-        # if self.notes_row = self.date_headers  
-        self.dates_row = date_headers
-        #print(self.dates_row, "dates_row")
-        print (self.data.loc[date_headers,"value"], date_headers)
 
         self.assets_row = [i for i in self.data.index
                            if "asset" in self.data.loc[i, "value"].lower()]
@@ -229,7 +231,6 @@ class TableFitter(TableIdentifier):
         Raises:
             None
         """
-        print(self.dates_row," dates row") 
         # Set the current line we are considering - start with notes line
         #l = self.data.loc[self.notes_row[0], "line_num"] 
         if (len(self.notes_row) != 0):
