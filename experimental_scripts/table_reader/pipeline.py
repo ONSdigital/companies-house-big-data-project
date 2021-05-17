@@ -64,7 +64,7 @@ fs = gcsfs.GCSFileSystem("ons-companies-house-dev", token="/home/andre_faul/keys
 # df = pd.read_csv("gs://ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/doc_ai_token_dfs/04391694_active_bs_tokens.csv")
 #
 doc_parser = DocParser(fs)
-doc_parser.parse_document("ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/bs_pdfs/04677900_bs.pdf",
+doc_parser.parse_document("ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/bs_pdfs/astra_zeneca_bs.pdf",
                           "/home/andre_faul/keys/dev_key.json",
                           "ons-companies-house-dev")
 doc_parser.tokens_to_df()

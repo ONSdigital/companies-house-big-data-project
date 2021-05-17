@@ -56,12 +56,12 @@ class TableFitter(TableIdentifier):
         years = range(1999,2025)        
         date_indexes = []        
         #check for notes check for dates !0 > 2 then currency 
-        #date_x =0
+        date_x =0
         for i in self.data.index:
             contains_year = any([str(y) == self.data.loc[i, "value"].strip() for y in years]) 
-            if contains_year:# and date_x <=2:#add check for at most 2 
+            if contains_year  and date_x <=2:#add check for at most 2 
                 date_indexes.append(i)
-                #date_x+=1
+                date_x+=1
         date_headers = date_indexes
         self.dates_row = date_headers
         print(self.dates_row,"dates row")
