@@ -46,7 +46,7 @@ def collect_links(event, content):
     test_run = False
     try:
         if "test" in event["attributes"].keys():
-            tes_run = eval(event["attributes"]["test"])
+            test_run = eval(event["attributes"]["test"])
     except:
         pass
     
