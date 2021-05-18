@@ -29,7 +29,7 @@ def scrape_webpage(event, context):
         None
     """
     # Specify the bucket where .zip files should be saved
-    dir_to_save = os.environ['bucket']
+    dir_to_save = os.environ['scraped_bucket']
 
     # Set up a GCS client to handle the download to GCS
     storage_client = storage.Client()

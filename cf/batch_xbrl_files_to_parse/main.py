@@ -109,9 +109,9 @@ def batch_files(event, context):
     # Retrieve and set necessary variables
     xbrl_directory = event["attributes"]["xbrl_directory"]
 
-    project = os.environ['project']
-    bq_location = os.environ['bq_location']
-    csv_location = os.environ['csv_location']
+    project = os.environ['gcp_project']
+    bq_location = os.environ['parsed_bq_table_location']
+    csv_location = os.environ['parsed_bucket']
 
     all_files = [file.split("/")[-1] for file in fs.ls(xbrl_directory)]
 

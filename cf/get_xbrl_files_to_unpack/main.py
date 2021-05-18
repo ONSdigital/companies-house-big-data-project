@@ -100,10 +100,10 @@ def get_xbrl_files(event, context):
     """
     # Extract desired attributes from the message payload & enviro
     zip_path = event["attributes"]["zip_path"]
-    bq_location = os.environ['bq_location']
+    bq_location = os.environ['parsed_bq_table_location']
     project = os.environ['project']
     test_run = event["attributes"]["test"]
-    bucket = os.environ["bucket"] 
+    bucket = os.environ["unpacked_bucket"] 
     # Create a GCSFS object
     fs = gcsfs.GCSFileSystem(cache_timeout=0)
 

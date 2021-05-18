@@ -35,7 +35,7 @@ def collect_links(event, content):
 
     url = "http://download.companieshouse.gov.uk/en_monthlyaccountsdata.html"
     base_url = "http://download.companieshouse.gov.uk/"
-    dir_to_save = os.environ['bucket']
+    dir_to_save = os.environ['scraped_bucket']
     
     # Get url data via a get request
     res = requests.get(url)
