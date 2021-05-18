@@ -7,7 +7,6 @@ import time
 import random
 from google.cloud import storage, pubsub_v1
 
-
 def collect_links(event, content):
     """
     Scrapes target web page and sends the links of all
