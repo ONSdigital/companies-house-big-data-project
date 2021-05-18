@@ -98,12 +98,12 @@ def get_xbrl_files(event, context):
         ----------------------------
         context (google.cloud.functions.Context): Metadata for the event.
     """
-    # Extract desired attributes from the message payload
+    # Extract desired attributes from the message payload & enviro
     zip_path = event["attributes"]["zip_path"]
-    bq_location = "xbrl_parsed_data"
-    project = "ons-companies-house-dev"
+    bq_location = os.environ['bq_location']
+    project = os.environ['project']
     test_run = event["attributes"]["test"]
-
+    bucket = os.environ["bucket"] 
     # Create a GCSFS object
     fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
@@ -114,7 +114,7 @@ def get_xbrl_files(event, context):
     )
 
     # Specify the directory where unpacked files should be saved
-    xbrl_directory = "ons-companies-house-dev-xbrl-unpacked-data/" + (zip_path.split("/")[-1]).split(".")[0]
+    xbrl_directory = bucket + "/" + (zip_path.split("/")[-1]).split(".")[0]
 
     # Check the directory to save to doesn't already exist
     if fs.exists(xbrl_directory + "/"):

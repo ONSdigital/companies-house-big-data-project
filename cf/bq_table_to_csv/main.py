@@ -77,7 +77,7 @@ def check_parser(event, content):
     no_files_unzipped = int(unpack_last_entry.payload.split(" ")[1])
 
     # Query BQ table to check number of files parsed
-    bq_database = "ons-companies-house-dev.xbrl_parsed_data"
+    bq_database = os.environ['bq_database']
     table_id = bq_database+"."+bq_table_name
     # SQL query to find number of files in dataset
     sql_query = """SELECT COUNT(DISTINCT(doc_name)) FROM `{}`""".format(table_id)
@@ -117,7 +117,7 @@ def check_parser(event, content):
         fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
         # Define input arguments for export csv
-        gcs_location = "ons-companies-house-dev-xbrl-parsed-data"
+        gcs_location = os.environ['gcs_location']
         csv_name =  file_name[-4:] + "-" + file_name[22:-4] + "_xbrl_data"
 
         # Retrieve a list of all files at the location specified
