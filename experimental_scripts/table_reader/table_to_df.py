@@ -125,7 +125,6 @@ class Table2Df:
             None
         """
         #Converts "column" column into a sorted unique list and removes the unlabeled first column
-        
         sorted_column = list(set(self.table.data["column"]))     
         sorted_column = [0 if x != x else x for x in sorted_column]
         sorted_column.sort()
