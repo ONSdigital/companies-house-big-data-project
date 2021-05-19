@@ -29,7 +29,6 @@ class TableFitter(TableIdentifier):
         self.date_headers = []
         self.unit_headers = []
 
-
     def __getitem__(self, i):
         return f"Value {i}"
         
@@ -47,15 +46,13 @@ class TableFitter(TableIdentifier):
         """
         # if len(self.notes_row) == 0 :#look for currency
         # Set class attributes for the indices where we find specific values
-        #notes row aquisition 
         self.notes_row = [i for i in self.data.index
                           if self.data.loc[i, "value"].lower()
                           in ["note", "notes"]]
         self.notes_tf = len(self.notes_row) != 0  
 
         years = range(1999,2025)        
-        date_indexes = []        
-        #check for notes check for dates !0 > 2 then currency 
+        date_indexes = []         
         date_x =0
         for i in self.data.index:
             contains_year = any([str(y) == self.data.loc[i, "value"].strip() for y in years]) 
@@ -236,20 +233,19 @@ class TableFitter(TableIdentifier):
         if (len(self.notes_row) != 0):
             l = self.data.loc[self.notes_row[0], "line_num"]   
         else:
-            l  = self.dates_row[0] #
+            l = self.data.loc[self.dates_row[0], "line_num"]   
             self.notes_row = self.dates_row
 
         # Add the notes line to the relevant variables  
         header_lines = [l]
         header_indices = list(self.data[self.data["line_num"] == l].index)
         
-        
         # Look for other header rows below the 'notes' row
         while l < self.total_lines:
             l += 1
-            
-            # Stop at the first line with an element in the first column
-            if any([(i in self.columns[0])
+
+            # Stop at the first line with an element in the first column        
+            if any([(i in self.columns[0]) 
                     for i in self.data[self.data["line_num"] == l].index]):
                 break
             else:
@@ -263,14 +259,13 @@ class TableFitter(TableIdentifier):
         if (len(self.notes_row) != 0):
             l = self.data.loc[self.notes_row[0], "line_num"]     
         else:
-            l  = self.dates_row[0]
+            l = self.data.loc[self.dates_row[0], "line_num"]   
             self.notes_row = self.dates_row
     
         y0 = stats.median(self.data[self.data["line_num"] == l]["first_y_vertex"])
         y1 = 0
         while l > min(self.data["line_num"]):
             l -= 1
-
             h = stats.median(self.data[self.data["line_num"] == l]["height"])
             y1 = stats.median(self.data[self.data["line_num"] == l]["first_y_vertex"])
             if any([(i in self.columns[0])

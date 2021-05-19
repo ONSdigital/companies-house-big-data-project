@@ -11,7 +11,7 @@ class Table2Df:
         self.data = table_fit.data
         self.table_data = self.table.data.drop(self.table.header_indices)
 
-
+        
     def reconstruct_table(self):
         """
         Takes the information stored in the table_fit object and reconstitutes it into
@@ -128,7 +128,6 @@ class Table2Df:
         
         sorted_column = list(set(self.table.data["column"]))     
         sorted_column = [0 if x != x else x for x in sorted_column]
-        #sorted_column = [int(y) for y in sorted_column] 
         sorted_column.sort()
         if self.table.notes_tf:
             sorted_column.pop(0)
@@ -136,7 +135,7 @@ class Table2Df:
         self.data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
         data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
                 
-        currencies = [self.data.loc[i, "value"] for i in self.table.header_indices if
+        currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         currency = max(set(currencies), key=currencies.count)
         
