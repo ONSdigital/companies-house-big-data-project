@@ -51,32 +51,27 @@ class TableFitter(TableIdentifier):
                           in ["note", "notes"]]
         self.notes_tf = len(self.notes_row) != 0  
 
-        years = range(1999,2025)        
+        years = range(1999,2050)
+        years_two = range(0,50)       
         date_indexes = []         
-        date_x =0
+        date_x = 0
         for i in self.data.index:
-            contains_year = any([str(y) == self.data.loc[i, "value"].strip() for y in years]) 
+            contains_year = any([str(y) == self.data.loc[i, "value"].strip() for y in years or years_two]) 
             if contains_year and date_x <=2: #add check for at most 2 
                 date_indexes.append(i)
                 date_x+=1
         if date_x == 1:
             date_headers = date_indexes
             self.dates_row = date_headers
-        elif date_x > 1: #checks if there are 2 dates if there are it checks 
-            if (int(self.data.loc[date_indexes[0] , "value"])- 1) == int(self.data.loc[date_indexes[1], "value"]): # WHY IS THIS 2019 then 2018
+        elif date_x > 1: #if there are 2 dates then checks if they are sequential 
+            print(self.data.loc[date_indexes , "value"])
+            if (int(self.data.loc[date_indexes[0] , "value"])- 1) == int(self.data.loc[date_indexes[1], "value"]): 
                 date_headers = date_indexes
                 self.dates_row = date_headers
                 print("they are sequential", self.data.loc[date_indexes[1] , "value"], self.data.loc[date_indexes[0], "value"])
             else:
                 date_headers = date_indexes[0]
                 self.dates_row = date_headers
-
-        print(self.dates_row,"dates row")
-
-       # years_seq = range(0,20)
-        #date_seq_indexes = []
-        #for j in self.data.index:
-        #    contains_seq = any([str(e) ==g])
 
         currency_indexes = [i for i in self.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
