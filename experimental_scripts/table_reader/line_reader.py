@@ -187,17 +187,21 @@ class LineReader:
         fdf = self.data.copy()
 
         # Create lists to store the vertices
-        xs, ys = [], []
+        xs, ys, heights, centres = [], [], [], []
 
         # For the normed vertices of each token, add the relevant coordinates
         # to the lists
         for vertices in fdf["normed_vertices"]:
             xs.append(eval(vertices)[3][0])
             ys.append(eval(vertices)[3][1])
+            heights.append(eval(vertices)[3][1]-eval(vertices)[0][1])
+            centres.append(0.5*(eval(vertices)[3][0]+eval(vertices)[2][0]))
 
         # Add new columns to the data frame
         fdf["first_x_vertex"] = xs
         fdf["first_y_vertex"] = ys
+        fdf["height"] = heights
+        fdf["central_x_vertex"] = centres
         self.data = fdf
         # return fdf
 

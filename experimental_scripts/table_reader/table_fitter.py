@@ -2,9 +2,11 @@ import pandas as pd
 import numpy as np
 import statistics as stats
 import regex
+import gcsfs
 
 from line_reader import LineReader
 from table_identifier import TableIdentifier
+from doc_ai_parser import DocParser
 
 
 class TableFitter(TableIdentifier):
@@ -66,6 +68,8 @@ class TableFitter(TableIdentifier):
 
         # Find all other elements that align with the assets coordinates
         aligned_dict = self.find_aligned_indices(self.data, x_dist)
+        for i in aligned_dict["indices"]:
+            self.data.loc[i, "column"] = int(0)
         self.columns.append(aligned_dict["indices"])
 
     @staticmethod
@@ -203,6 +207,7 @@ class TableFitter(TableIdentifier):
 
         # Set the current line we are considering - start with notes line
         l = self.data.loc[self.notes_row[0], "line_num"]
+        
 
         # Add the notes line to the relevant variables
         header_lines = [l]
@@ -211,6 +216,7 @@ class TableFitter(TableIdentifier):
         # Look for other header rows below the 'notes' row
         while l < self.total_lines:
             l += 1
+            
             # Stop at the first line with an element in the first column
             if any([(i in self.columns[0])
                     for i in self.data[self.data["line_num"] == l].index]):
@@ -223,16 +229,24 @@ class TableFitter(TableIdentifier):
 
         # Start from the 'notes' line and look for header rows above
         l = self.data.loc[self.notes_row[0], "line_num"]
+
+        y0 = stats.median(self.data[self.data["line_num"] == l]["first_y_vertex"])
+        y1 = 0
         while l > min(self.data["line_num"]):
             l -= 1
+
+            h = stats.median(self.data[self.data["line_num"] == l]["height"])
+            y1 = stats.median(self.data[self.data["line_num"] == l]["first_y_vertex"])
             if any([(i in self.columns[0])
                     for i in self.data[self.data["line_num"] == l].index]):
-                print(f"line number is{l}")
+                break
+            elif y0 - y1 > 1.5*h:
                 break
             else:
                 header_lines.append(l)
                 header_indices += \
                     list(self.data[self.data["line_num"] == l].index)
+                y0 = y1
         self.header_lines = header_lines
         self.header_indices = header_indices
         self.header_groups = self.group_header_points(self.data,
@@ -242,7 +256,7 @@ class TableFitter(TableIdentifier):
              for i in self.header_groups]
         print(len(header_lines), " header lines have been detected")
 
-    def get_other_columns(self):
+    def get_other_columns(self,thresh=0.95):
         """
         Function to group the indices of columns other than the first, based
         on elements which are aligned with the elements in the header row.
@@ -250,7 +264,7 @@ class TableFitter(TableIdentifier):
         Arguments:
             None
         Returns:
-            None
+            exceptions: a list containing the indices of elements that are not 
         Raises:
             None
         """
@@ -262,14 +276,107 @@ class TableFitter(TableIdentifier):
         for i in range(len(self.header_coords)):
             self.columns.append([])
 
+        exceptions = []
+
         # For each element not in a column add the index to a column
         for i in other_cols_df.index:
             col_to_fit = \
                 self.find_closest_col(other_cols_df, self.header_coords, i)
-            self.columns[col_to_fit].append(i)
+            if col_to_fit != None:
+                self.data.loc[i, "column"] = int(col_to_fit)
+                self.columns[col_to_fit].append(i)
+            else:
+                exceptions.append(i)
+
+        #print('This is what it looked like',self.data)
+
+        # determine if any residual elements are aligned
+        exception_aligned = TableFitter.group_header_points(other_cols_df, exceptions)
+        print(exception_aligned)
+        
+        # evaluate residual elements and append a new column if 
+        # a critera is met:
+        # (more than 2 elements, high confidence or if any value is a digit)
+
+        for x in exception_aligned:
+            c = max(self.data.column)
+            print('Original C',c)
+            if len(x) > 1:
+                c += 1
+                self.data.loc[[i for i in x], "column"] = int(c)
+            else:
+                if self.data.loc[x[0],"confidence"] > thresh:
+                    c += 1
+                    self.data.loc[x[0], "column"] = int(c)
+
+                elif any(str.isdigit(c) for c in self.data.loc[x[0],'value']):
+                    c += 1
+                    self.data.loc[x[0], "column"] = int(c)
+                else:
+                    pass
+
+        #print('Did i do anything?', self.data)
+
+        return()
+    """
+    def headerless_column(self,exceptions):
+        
+        Function to add any exception elements in the scraped 
+        data, if are headerless columns of data. 
+        Uses a condifence threshold and the number of allined elements
+        to determine whetehr the data is an additional column 
+
+        Arguments:
+            execptions: 
+        Returns:
+            None
+        Raises:
+            None
+        
+    """
+    def get_other_columns_v2(self):
+        """
+        Function to group the indices of columns other than the first, without
+        using the detected header as a reference.
+
+        Arguments:
+            None
+        Returns:
+            None
+        Raises:
+            None
+        """
+
+        # Don't consider elements in the first column
+        other_cols_df = self.data.drop(self.columns[0]).sort_values(["line_num", "first_x_vertex"], ascending=[True, True])
+
+        columns_data = []
+
+        for index, row in other_cols_df.iterrows():
+            v1, v2 = eval(row["normed_vertices"])[3][0], eval(row["normed_vertices"])[2][0]
+            for col in columns_data:
+                if (v2 > col["xs"][0]) & (v1 < col["xs"][1]):
+                    col["indices"].append(index)
+                    col["xs"] = [min(v1, col["xs"][0]), max(v2, col["xs"][1])]
+                    break
+            else:
+                columns_data.append({"xs":[v1, v2], "indices":[index]})
+        if len(columns_data) > len(self.header_groups):
+            columns_data = sorted(columns_data, key = lambda k: len(k["indices"]))[(len(columns_data) - len(self.header_groups)):]
+        elif len(columns_data) < len(self.header_groups):
+            print("Not enough columns have been detected")
+            return 0
+
+        columns_data = sorted(columns_data, key=lambda k: k["xs"][0])
+        self.columns += [col["indices"] for col in columns_data]
+
+        for i, col in enumerate(self.columns):
+            self.data.loc[col, "column"] = i
+
+
         
     @staticmethod
-    def find_closest_col(df, columns, index):
+    def find_closest_col(df, columns, index, const=4):
         """
         Finds which column a given element (index) should be assigned to by
         finding which header element it is closest to.
@@ -295,8 +402,13 @@ class TableFitter(TableIdentifier):
 
         # Find the index of the one with the smallest distance (+1 since can't
         # be the first column
-        fitted_col = dists.index(min(dists)) + 1
-        return fitted_col
+        fitted_col = dists.index(min(dists))
+
+        if dists[fitted_col] <= const*(eval(df.loc[index, "normed_vertices"])[3][1]
+                          - eval(df.loc[index, "normed_vertices"])[0][1]):
+            return fitted_col + 1
+        else:
+            return None
 
     @staticmethod
     def group_header_points(df, header_indices):
@@ -337,30 +449,37 @@ class TableFitter(TableIdentifier):
 
         return header_groups
 
-    def get_info_headers(self, years = range(1999,2020)):
-        currency_indexes = [i for i in self.header_indices if
-                            len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
-        self.unit_headers = currency_indexes
-        
-        date_indexes = []
-        for i in self.header_indices:
-            print([(str(y) in self.data.loc[i, "value"]) for y in years])
-            contains_year = any([str(y) in self.data.loc[i, "value"] for y in years])
-            if contains_year:
-                date_indexes.append(i)
-        self.date_headers = date_indexes
+    def remove_excess_lines(self):
+        min_line = min(self.data.loc[self.header_indices, "line_num"])
+        new_cols = []
+        for col in self.columns:
+            new_cols.append([i for i in col if self.data.loc[i,"line_num"]>= min_line])
+        self.data = self.data.drop([i for i in self.data.index if self.data.loc[i,"line_num"]< min_line])
+        self.columns = new_cols
 
-        relevant_cols = []
-        add_unit = []
-        add_date = []
-        for i, g in enumerate(self.header_groups):
-            unit_col = any([j in self.unit_headers for j in g])
-            date_col = any([j in self.date_headers for j in g])
-            if unit_col or date_col:
-                relevant_cols.append(i+1)
-                if not unit_col:
-                    add_unit.append(i)
-                elif not date_col:
-                    add_date.append(i)
-            
+if __name__ == "__main__":
+    fs = gcsfs.GCSFileSystem("ons-companies-house-dev", token="/home/dylan_purches/keys/data_key.json")
 
+    doc_parser = DocParser(fs)
+    doc_parser.parse_document("ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/bs_pdfs/04677900_bs.pdf",
+                            "/home/dylan_purches/keys/data_key.json",
+                            "ons-companies-house-dev")
+    doc_parser.tokens_to_df()
+    # Implements the line reader module
+    lines_data = LineReader(doc_parser.token_df)
+    lines_data.add_first_vertex()
+    lines_data.get_line_nums()
+    lines_data.group_within_line()
+    lines_data.add_first_vertex()
+
+    # Implement the table identifier module
+    structs_data = TableIdentifier(lines_data.data)
+    structs_data.detect_table()
+
+    # Implement the table fitter module
+    table_data = TableFitter(structs_data.data)
+    table_data.clean_values()
+    table_data.get_first_col()
+    table_data.get_header_row()
+    table_data.remove_excess_lines()
+    table_data.get_other_columns()
