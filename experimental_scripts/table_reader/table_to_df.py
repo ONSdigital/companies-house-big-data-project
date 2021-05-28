@@ -133,7 +133,7 @@ class Table2Df:
         
         self.data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
         data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf )]
-                
+        
         currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         currency = max(set(currencies), key=currencies.count)
@@ -150,6 +150,59 @@ class Table2Df:
             raise(TypeError("Cannot logically fit dates to columns"))
         else:
             header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
+                        "unit":[currency]*len(data_cols)}
+
+
+        # Create an empty DataFrame to add information to
+        header_data = pd.DataFrame.from_dict(header_dict)
+        return header_data
+    def get_info_headers_v3(self):
+        """
+        Creates a DataFrame of information of column info (meta data). For each column in
+        our fitted table object, we record the corresponding date and units (currency).
+
+        Arguments:
+            years:          List of possible years to search for.
+        Returns:
+            header_data:    pandas DataFrame of column number with their relevant date and units
+                            as other variables
+        Raises:
+            None
+        """
+        #Converts "column" column into a sorted unique list and removes the unlabeled first column
+        sorted_column = list(set(self.table.data["column"]))     
+        sorted_column = [0 if x != x else x for x in sorted_column]
+        sorted_column.sort()
+        if self.table.notes_tf:
+            sorted_column.pop(0)
+
+        data_cols = []
+        for i in self.table.data.dates_row
+            for g,e in enumerate(sorted_column)
+                date_x1 = ([eval(v)[3][0] for v in df.loc[df.dates_row[g],"normed_vertices"]])
+                date_x2 = ([eval(v)[3][0] for v in df.loc[df.dates_row[g],"normed_vertices"]])
+                left_vertex = min([eval(v)[3][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
+                right_vertex = max([eval(v)[2][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
+                if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex
+                    data_cols.append(df.loc[df["column"]==g)
+                
+                else:
+                    data_cols.append(df.loc[df["column"]==g)
+                    data_cols.append(df.loc[df["column"]==g+1)
+                    e =+ 2
+
+
+       
+        currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
+                            len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
+        currency = max(set(currencies), key=currencies.count)
+        
+        # As above but for where we see a year
+       
+        self.dates = self.table.data.dates_row
+
+    
+        header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
                         "unit":[currency]*len(data_cols)}
 
 
