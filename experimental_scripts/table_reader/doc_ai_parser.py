@@ -53,7 +53,7 @@ class DocParser:
         return vertices
 
     def parse_document(self, input_uri, token_path,
-                       project_id, processor_id="643a05097d4ab993"):
+                       project_id, processor_id="cc464c0ab0b35040"):
         """
         Facilitates sending a request to the Doc AI API (via a specified
         processor) and saves the response (a 'document') as a class attribute.
