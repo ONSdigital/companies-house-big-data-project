@@ -77,11 +77,11 @@ class TableFitter(TableIdentifier):
             else:
                 date_headers = date_indexes[0]
                 self.dates_row = date_headers
-
+        
         currency_indexes = [i for i in self.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         self.unit_headers = currency_indexes
-
+        
 
         self.assets_row = [i for i in self.data.index
                            if "asset" in self.data.loc[i, "value"].lower()]
@@ -500,15 +500,15 @@ class TableFitter(TableIdentifier):
         x4 = x_dist[1].append(eval(df.loc[value4, "normed_vertices"])[2][0])
         #this then checks if any part of xd1 or xd2 is within the range x1-x2
         
-        if x1 <= xd1 <= x2:
+        
             
 
         
         #if not then it checks the range x1-x4
         #once grouped we can use these x1,x2 to find which way they are alligned 
         
-        dists = []
-        return #print(df)
+        
+        return x1 #print(df)
     @staticmethod
     def group_header_points(df, header_indices):
         """

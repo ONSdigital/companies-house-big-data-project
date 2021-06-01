@@ -133,7 +133,7 @@ class Table2Df:
         
         self.data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
         data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf )]
-                
+        
         currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         currency = max(set(currencies), key=currencies.count)
@@ -145,7 +145,7 @@ class Table2Df:
             if contains_year:
                 dates.append(self.data.loc[i, "value"])
         self.dates = dates
-
+        
         if len(data_cols)%len(dates) != 0:
             raise(TypeError("Cannot logically fit dates to columns"))
         else:
@@ -175,33 +175,51 @@ class Table2Df:
         sorted_column.sort()
         if self.table.notes_tf:
             sorted_column.pop(0)
-
+        
+        df = self.table.data
         data_cols = []
-        for i in self.table.data.dates_row
-            for g,e in enumerate(sorted_column)
-                date_x1 = ([eval(v)[3][0] for v in df.loc[df.dates_row[g],"normed_vertices"]])
-                date_x2 = ([eval(v)[3][0] for v in df.loc[df.dates_row[g],"normed_vertices"]])
+        self.data_cols = []
+        dates = []
+        print(len(self.table.dates_row)," dates row df")
+        print(self.table.dates_row,"dates row")
+        print(sorted_column," sorted column")
+        for i in self.table.dates_row:
+            dates.append(df.loc[i, "value"])
+            #need to not count asset row
+            for g,e in enumerate(sorted_column):
+                date_x1 = eval(df.loc[i, "normed_vertices"])[3][0]
+                date_x2 = eval(df.loc[i, "normed_vertices"])[2][0]
+                
                 left_vertex = min([eval(v)[3][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
                 right_vertex = max([eval(v)[2][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
-                if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex
-                    data_cols.append(df.loc[df["column"]==g)
                 
+                if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex:
+                    data_cols.append(df.loc[df["column"]==g])
+                    self.data_cols.append(df.loc[df["column"]==g])
+                    #print(data_cols)
+                    
                 else:
-                    data_cols.append(df.loc[df["column"]==g)
-                    data_cols.append(df.loc[df["column"]==g+1)
+                    data_cols.append(df.loc[df["column"]==g])
+                    self.data_cols.append(df.loc[df["column"]==g])
+                    data_cols.append(df.loc[df["column"]==g+1])
+                    self.data_cols.append(df.loc[df["column"]==g+1])
                     e =+ 2
-
-
-       
+                    
+                
+        
+        
+        #print(dates,"dates col col")
+        
+        #-print(data_cols)
         currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         currency = max(set(currencies), key=currencies.count)
         
         # As above but for where we see a year
        
-        self.dates = self.table.data.dates_row
-
-    
+        self.dates = dates
+        
+        
         header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
                         "unit":[currency]*len(data_cols)}
 
@@ -209,7 +227,7 @@ class Table2Df:
         # Create an empty DataFrame to add information to
         header_data = pd.DataFrame.from_dict(header_dict)
         return header_data
-        
+
     def get_final_df(self):
         """
         Get a final DataFrame in a similar form as how we scraped xbrl data ("name", "value", "date", "unit"
@@ -223,7 +241,7 @@ class Table2Df:
             None
         """
         # Merge TableFitter df with our info headers data
-        self.df = self.table_data.merge(self.get_info_headers_v2(), on="column")
+        self.df = self.table_data.merge(self.get_info_headers_v3(), on="column")
         
         # For each row of the df, either add a "name" value if you can find one, if not just set to None
         for index, row in self.df.iterrows():
