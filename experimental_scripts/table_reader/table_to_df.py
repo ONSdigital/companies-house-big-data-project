@@ -172,62 +172,101 @@ class Table2Df:
         #Converts "column" column into a sorted unique list and removes the unlabeled first column
         sorted_column = list(set(self.table.data["column"]))     
         sorted_column = [0 if x != x else x for x in sorted_column]
+        print('hello', sorted_column)
         sorted_column.sort()
         if self.table.notes_tf:
             sorted_column.pop(0)
-        
+
+        data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
+
         df = self.table.data
-        data_cols = []
-        self.data_cols = []
+        print(df)
+        column_groups = []
+        current_group = []
         dates = []
-        
-        for i in self.table.dates_row:
-            dates.append(df.loc[i, "value"])
-            #need to not count asset row
-            for g,e in enumerate(sorted_column):
-                date_x1 = eval(df.loc[i, "normed_vertices"])[3][0]
-                date_x2 = eval(df.loc[i, "normed_vertices"])[2][0]
+
+        date_counter = 0
+        while len(data_cols) > 0:
+            print(date_counter)            
+            # date index we want to assoicate to columns
+            assignment_date = self.table.dates_row[date_counter]
+            
+            # left and right x coordinates of the date we want to associate (x1 and x2 respectivly)
+            date_x1 = eval(df.loc[assignment_date, "normed_vertices"])[3][0]
+            date_x2 = eval(df.loc[assignment_date, "normed_vertices"])[2][0]
+
+            # first column we want to associate date
+            target_column = data_cols[0]
+
+            # update column grouping with current column
+            current_group.append(target_column)
+            print(current_group)
+
+            # determine the left and right edges of column  
+            left_vertex = min([eval(v)[3][0] for v in df.loc[df["column"] == min(current_group),"normed_vertices"]])
+            
+            right_vertex = max([eval(v)[2][0] for v in df.loc[df["column"] == max(current_group),"normed_vertices"]])
+
+            print(left_vertex, date_x1, date_x2, right_vertex)
+
+            if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex:
+                column_groups.append(current_group)
+
+                # update date counter
+                date_counter += 1
+                # refresh current group
+                current_group = []
+
+            data_cols.pop(0)
+
+            print('SORTED COLUMNS', data_cols)
+        print(column_groups)
+
+        # for i in self.table.dates_row:
+        #     dates.append(df.loc[i, "value"])
+        #     k = df.loc[i, "value"]
+        #     #need to not count asset row
+        #     for g,e in enumerate(sorted_column):
+        #         date_x1 = eval(df.loc[i, "normed_vertices"])[3][0]
+        #         date_x2 = eval(df.loc[i, "normed_vertices"])[2][0]
                 
-                left_vertex = min([eval(v)[3][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
-                right_vertex = max([eval(v)[2][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
-                right_vertex2 = max([eval(v)[2][0] for v in df.loc[df["column"]==g+1,"normed_vertices"]])
+        #         left_vertex = min([eval(v)[3][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
+        #         right_vertex = max([eval(v)[2][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
                 
-                if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex:
-                    data_cols.append(df.loc[df["column"]==g])
-                    self.data_cols.append(df.loc[df["column"]==g])
-                    #print(data_cols)
-                    #need to add the column instead and work out how to match to columns ASK Dylan. 
-                #if left_vertex <= date_x1 <= right_vertex2 and left_vertex <= date_x2 <= right_vertex2:
-                else:
-                    data_cols.append(df.loc[df["column"]==g])
-                    self.data_cols.append(df.loc[df["column"]==g])
-                    data_cols.append(df.loc[df["column"]==g+1])
-                    self.data_cols.append(df.loc[df["column"]==g+1])
-                    e =+ 2
-                    
+        #         right_vertex2 = max([eval(v)[2][0] for v in df.loc[df["column"]==g+1,"normed_vertices"]])
                 
+        #         if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex:
+        #             date_assoication[k] = [g]
+        #             self.data_cols.append(g)
+        #             #print(data_cols)
+        #             #need to add the column instead and work out how to match to columns ASK Dylan. 
+        #         elif left_vertex <= date_x1 <= right_vertex2 and left_vertex <= date_x2 <= right_vertex2:
+        #         #else:
+        #             date_assoication[k] = [g,g+1]
+        #             self.data_cols.append(g)
+        #             self.data_cols.append(g+1)
+        #             e =+ 2
+
+        #     print(date_assoication)
+        #     print(self.data_cols)
+        # #-print(data_cols)
+        # currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
+        #                     len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
+        # currency = max(set(currencies), key=currencies.count)
         
+        # # As above but for where we see a year
         
+        # #self.dates = self.table.dates_row
+        # #dates = self.table.dates_row
+        # print(dates,"dates col col")
         
-        
-        #-print(data_cols)
-        currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
-                            len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
-        currency = max(set(currencies), key=currencies.count)
-        
-        # As above but for where we see a year
-       
-        #self.dates = self.table.dates_row
-        #dates = self.table.dates_row
-        print(dates,"dates col col")
-        
-        header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
-                        "unit":[currency]*len(data_cols)}
+        # header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
+        #                 "unit":[currency]*len(data_cols)}
 
 
-        # Create an empty DataFrame to add information to
-        header_data = pd.DataFrame.from_dict(header_dict)
-        return header_data
+        # # Create an empty DataFrame to add information to
+        # header_data = pd.DataFrame.from_dict(header_dict)
+        # return header_data
 
     def get_final_df(self):
         """
