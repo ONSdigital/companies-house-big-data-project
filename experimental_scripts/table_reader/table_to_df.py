@@ -180,9 +180,7 @@ class Table2Df:
         data_cols = []
         self.data_cols = []
         dates = []
-        print(len(self.table.dates_row)," dates row df")
-        print(self.table.dates_row,"dates row")
-        print(sorted_column," sorted column")
+        
         for i in self.table.dates_row:
             dates.append(df.loc[i, "value"])
             #need to not count asset row
@@ -192,12 +190,14 @@ class Table2Df:
                 
                 left_vertex = min([eval(v)[3][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
                 right_vertex = max([eval(v)[2][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
+                right_vertex2 = max([eval(v)[2][0] for v in df.loc[df["column"]==g+1,"normed_vertices"]])
                 
                 if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex:
                     data_cols.append(df.loc[df["column"]==g])
                     self.data_cols.append(df.loc[df["column"]==g])
                     #print(data_cols)
-                    
+                    #need to add the column instead and work out how to match to columns ASK Dylan. 
+                #if left_vertex <= date_x1 <= right_vertex2 and left_vertex <= date_x2 <= right_vertex2:
                 else:
                     data_cols.append(df.loc[df["column"]==g])
                     self.data_cols.append(df.loc[df["column"]==g])
@@ -208,7 +208,7 @@ class Table2Df:
                 
         
         
-        #print(dates,"dates col col")
+        
         
         #-print(data_cols)
         currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
@@ -217,8 +217,9 @@ class Table2Df:
         
         # As above but for where we see a year
        
-        self.dates = dates
-        
+        #self.dates = self.table.dates_row
+        #dates = self.table.dates_row
+        print(dates,"dates col col")
         
         header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
                         "unit":[currency]*len(data_cols)}
