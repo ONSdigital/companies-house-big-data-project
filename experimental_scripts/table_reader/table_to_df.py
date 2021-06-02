@@ -11,7 +11,7 @@ class Table2Df:
         self.data = table_fit.data
         self.table_data = self.table.data.drop(self.table.header_indices)
 
-
+        
     def reconstruct_table(self):
         """
         Takes the information stored in the table_fit object and reconstitutes it into
@@ -124,10 +124,17 @@ class Table2Df:
         Raises:
             None
         """
-        self.data_cols = [i+1 for i,g in enumerate(self.table.header_groups) if self.table.notes_row[0] not in g]
-        data_cols = [i+1 for i,g in enumerate(self.table.header_groups) if self.table.notes_row[0] not in g]
-
-        currencies = [self.data.loc[i, "value"] for i in self.table.header_indices if
+        #Converts "column" column into a sorted unique list and removes the unlabeled first column
+        sorted_column = list(set(self.table.data["column"]))     
+        sorted_column = [0 if x != x else x for x in sorted_column]
+        sorted_column.sort()
+        if self.table.notes_tf:
+            sorted_column.pop(0)
+        
+        self.data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
+        data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf )]
+        
+        currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         currency = max(set(currencies), key=currencies.count)
         
@@ -138,11 +145,83 @@ class Table2Df:
             if contains_year:
                 dates.append(self.data.loc[i, "value"])
         self.dates = dates
-
+        
         if len(data_cols)%len(dates) != 0:
             raise(TypeError("Cannot logically fit dates to columns"))
         else:
             header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
+                        "unit":[currency]*len(data_cols)}
+
+
+        # Create an empty DataFrame to add information to
+        header_data = pd.DataFrame.from_dict(header_dict)
+        return header_data
+    def get_info_headers_v3(self):
+        """
+        Creates a DataFrame of information of column info (meta data). For each column in
+        our fitted table object, we record the corresponding date and units (currency).
+
+        Arguments:
+            years:          List of possible years to search for.
+        Returns:
+            header_data:    pandas DataFrame of column number with their relevant date and units
+                            as other variables
+        Raises:
+            None
+        """
+        #Converts "column" column into a sorted unique list and removes the unlabeled first column
+        sorted_column = list(set(self.table.data["column"]))     
+        sorted_column = [0 if x != x else x for x in sorted_column]
+        sorted_column.sort()
+        if self.table.notes_tf:
+            sorted_column.pop(0)
+        
+        df = self.table.data
+        data_cols = []
+        self.data_cols = []
+        dates = []
+        
+        for i in self.table.dates_row:
+            dates.append(df.loc[i, "value"])
+            #need to not count asset row
+            for g,e in enumerate(sorted_column):
+                date_x1 = eval(df.loc[i, "normed_vertices"])[3][0]
+                date_x2 = eval(df.loc[i, "normed_vertices"])[2][0]
+                
+                left_vertex = min([eval(v)[3][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
+                right_vertex = max([eval(v)[2][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
+                right_vertex2 = max([eval(v)[2][0] for v in df.loc[df["column"]==g+1,"normed_vertices"]])
+                
+                if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex:
+                    data_cols.append(df.loc[df["column"]==g])
+                    self.data_cols.append(df.loc[df["column"]==g])
+                    #print(data_cols)
+                    #need to add the column instead and work out how to match to columns ASK Dylan. 
+                #if left_vertex <= date_x1 <= right_vertex2 and left_vertex <= date_x2 <= right_vertex2:
+                else:
+                    data_cols.append(df.loc[df["column"]==g])
+                    self.data_cols.append(df.loc[df["column"]==g])
+                    data_cols.append(df.loc[df["column"]==g+1])
+                    self.data_cols.append(df.loc[df["column"]==g+1])
+                    e =+ 2
+                    
+                
+        
+        
+        
+        
+        #-print(data_cols)
+        currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
+                            len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
+        currency = max(set(currencies), key=currencies.count)
+        
+        # As above but for where we see a year
+       
+        #self.dates = self.table.dates_row
+        #dates = self.table.dates_row
+        print(dates,"dates col col")
+        
+        header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
                         "unit":[currency]*len(data_cols)}
 
 
@@ -163,7 +242,7 @@ class Table2Df:
             None
         """
         # Merge TableFitter df with our info headers data
-        self.df = self.table_data.merge(self.get_info_headers_v2(), on="column")
+        self.df = self.table_data.merge(self.get_info_headers_v3(), on="column")
         
         # For each row of the df, either add a "name" value if you can find one, if not just set to None
         for index, row in self.df.iterrows():
@@ -173,6 +252,7 @@ class Table2Df:
                 self.df.loc[index, "name"] = self.data[(self.data["line_num"]==l)&(self.data["column"]==0)].iloc[0]["value"]
             except:
                 self.df.loc[index, "name"] = None
+                
         
         # Only save the relevant columns
         self.df = self.df[["name", "value", "date", "unit"]]

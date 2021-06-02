@@ -6,11 +6,11 @@ import statistics as stats
 from line_reader import LineReader
 from table_identifier import TableIdentifier
 from table_fitter import TableFitter
-from pdf_annotator import PDFAnnotator
+#from pdf_annotator import PDFAnnotator
 from doc_ai_parser import DocParser
 from table_to_df import Table2Df
 
-fs = gcsfs.GCSFileSystem("ons-companies-house-dev", token="/home/dylan_purches/keys/data_key.json")
+fs = gcsfs.GCSFileSystem("ons-companies-house-dev", token="/home/andre_faul/keys/dev_key.json")
 
 # sheets = fs.ls("ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/bs_pdfs")
 # names = [((t.split("/")[-1]).split(".")[0])[:-3] for t in sheets]
@@ -63,9 +63,9 @@ fs = gcsfs.GCSFileSystem("ons-companies-house-dev", token="/home/dylan_purches/k
 
 # df = pd.read_csv("gs://ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/doc_ai_token_dfs/04391694_active_bs_tokens.csv")
 #
-doc_parser = DocParser(fs)
-doc_parser.parse_document("ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/bs_pdfs/05996637_2013_bs.pdf",
-                          "/home/dylan_purches/keys/data_key.json",
+doc_parser = DocParser(fs) #02460543_dormant_bs 04391694_active_bs SC564642_bs astra_zeneca_bs 03541703_bs 04391694_active_bs   03875584_bs  (04416996_bs mod 0 error)
+doc_parser.parse_document("ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/bs_pdfs/04391694_active_bs.pdf",
+                          "/home/andre_faul/keys/dev_key.json",
                           "ons-companies-house-dev")
 doc_parser.tokens_to_df()
 # Implements the line reader module

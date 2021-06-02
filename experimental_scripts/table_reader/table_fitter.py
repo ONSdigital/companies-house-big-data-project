@@ -9,12 +9,15 @@ from table_identifier import TableIdentifier
 from doc_ai_parser import DocParser
 
 
+
 class TableFitter(TableIdentifier):
     def __init__(self, df):
         TableIdentifier.__init__(self, df)
         self.columns = []
         self.notes_row = []
         self.assets_row = []
+        self.dates_row = []
+        self.currency_row = []
 
         # Header properties
         self.header_indices = []
@@ -26,6 +29,8 @@ class TableFitter(TableIdentifier):
         self.date_headers = []
         self.unit_headers = []
 
+    def __getitem__(self, i):
+        return f"Value {i}"
         
     def clean_values(self, chars = ["\n"]):
         """
@@ -42,13 +47,45 @@ class TableFitter(TableIdentifier):
         for char in chars:
             self.data["value"] = self.data["value"].str\
                         .replace(char, '')
-
+        # if len(self.notes_row) == 0 :#look for currency
         # Set class attributes for the indices where we find specific values
+        
+        
         self.notes_row = [i for i in self.data.index
                           if self.data.loc[i, "value"].lower()
-                          in ["note", "notes"]]
+                          in ["note", "notes"]]           
+        self.notes_tf = len(self.notes_row) != 0  
+        print(self.notes_tf)
+        print((5 * stats.median(self.data.loc[self.data.index,"height"])))
+        
+        years = range(1999,2050)
+        years_two = range(0,50)       
+        date_indexes = []         
+        date_x = 0
+        for i in self.data.index:
+            contains_year = any([str(y) == self.data.loc[i, "value"].strip() for y in years or years_two]) 
+            if contains_year and date_x <=2: #add check for at most 2 
+                date_indexes.append(i)
+                date_x+=1
+        if date_x == 1:
+            date_headers = date_indexes
+            self.dates_row = date_headers
+        elif date_x > 1: #if there are 2 dates then checks if they are sequential 
+            if (int(self.data.loc[date_indexes[0] , "value"])- 1) == int(self.data.loc[date_indexes[1], "value"]): 
+                date_headers = date_indexes
+                self.dates_row = date_headers
+            else:
+                date_headers = date_indexes[0]
+                self.dates_row = date_headers
+        
+        currency_indexes = [i for i in self.data.index if
+                            len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
+        self.unit_headers = currency_indexes
+        
+
         self.assets_row = [i for i in self.data.index
                            if "asset" in self.data.loc[i, "value"].lower()]
+        
     
     def get_first_col(self):
         """
@@ -204,21 +241,28 @@ class TableFitter(TableIdentifier):
         Raises:
             None
         """
-
         # Set the current line we are considering - start with notes line
-        l = self.data.loc[self.notes_row[0], "line_num"]
-        
+        #l = self.data.loc[self.notes_row[0], "line_num"] 
+        if (len(self.notes_row) != 0):
+            l = self.data.loc[self.notes_row[0], "line_num"]            
+        elif (len(self.notes_row) == 0):
+            l = self.data.loc[self.dates_row[0], "line_num"]   
+            self.notes_row = self.dates_row            
+        elif (len(self.notes_row) == 0 and len(self.dates_row == 0)):
+            l = self.data.loc[self.unit_headers[0], "line_num"]      
+        else:
+            print("no header")
 
-        # Add the notes line to the relevant variables
+        # Add the notes line to the relevant variables  
         header_lines = [l]
-        header_indices = list(self.data[self.data["line_num"] == l].index)
-
+        header_indices = list(self.data[self.data["line_num"] == l].index)      
+        
         # Look for other header rows below the 'notes' row
         while l < self.total_lines:
             l += 1
-            
-            # Stop at the first line with an element in the first column
-            if any([(i in self.columns[0])
+
+            # Stop at the first line with an element in the first column        
+            if any([(i in self.columns[0]) 
                     for i in self.data[self.data["line_num"] == l].index]):
                 break
             else:
@@ -227,14 +271,23 @@ class TableFitter(TableIdentifier):
                 header_indices += \
                     list(self.data[self.data["line_num"] == l].index)
 
-        # Start from the 'notes' line and look for header rows above
-        l = self.data.loc[self.notes_row[0], "line_num"]
+        # Start from the 'notes' line and look for header rows above 
+        #l = self.data.loc[self.notes_row[0], "line_num"]  
+        if (len(self.notes_row) != 0):
+            l = self.data.loc[self.notes_row[0], "line_num"]            
+        elif (len(self.notes_row) == 0):
+            l = self.data.loc[self.dates_row[0], "line_num"]   
+            self.notes_row = self.dates_row            
+        elif (len(self.notes_row) == 0 and len(self.dates_row == 0)):
+            l = self.data.loc[self.unit_headers[0], "line_num"]      
+        else:
+            print("no header")
 
+    
         y0 = stats.median(self.data[self.data["line_num"] == l]["first_y_vertex"])
         y1 = 0
         while l > min(self.data["line_num"]):
             l -= 1
-
             h = stats.median(self.data[self.data["line_num"] == l]["height"])
             y1 = stats.median(self.data[self.data["line_num"] == l]["first_y_vertex"])
             if any([(i in self.columns[0])
@@ -256,7 +309,7 @@ class TableFitter(TableIdentifier):
              for i in self.header_groups]
         print(len(header_lines), " header lines have been detected")
 
-    def get_other_columns(self,thresh=0.95):
+    def get_other_columns(self,thresh=0.95): 
         """
         Function to group the indices of columns other than the first, based
         on elements which are aligned with the elements in the header row.
@@ -334,6 +387,7 @@ class TableFitter(TableIdentifier):
             None
         
     """
+    
     def get_other_columns_v2(self):
         """
         Function to group the indices of columns other than the first, without
@@ -373,7 +427,7 @@ class TableFitter(TableIdentifier):
         for i, col in enumerate(self.columns):
             self.data.loc[col, "column"] = i
 
-
+    
         
     @staticmethod
     def find_closest_col(df, columns, index, const=4):
@@ -403,13 +457,58 @@ class TableFitter(TableIdentifier):
         # Find the index of the one with the smallest distance (+1 since can't
         # be the first column
         fitted_col = dists.index(min(dists))
-
-        if dists[fitted_col] <= const*(eval(df.loc[index, "normed_vertices"])[3][1]
-                          - eval(df.loc[index, "normed_vertices"])[0][1]):
+        
+        
+        if dists[fitted_col] <= 5*stats.median(df.loc[df.index,"height"]):#* stats.median(self.data.loc["height"]): #(const*eval(df.loc[index, "normed_vertices"])[0][1]
+                          #- eval(df.loc[index, "normed_vertices"])[0][1]):
+                       
             return fitted_col + 1
         else:
             return None
+    @staticmethod            
+    def find_closest_col_v2(df, columns, index, self):
+        """
+        Finds which column a given element (index) should be assigned to by
+        finding which header element it is closest to by using bounding boxes 
+        and comparing the ranges of the dates to the values contained in each columns 
+        left most side and right most and grouping them. 
 
+        Arguments:
+            df:         DataFrame to reference from
+            columns:    List of the x coordinates of the alignments of each of
+                        the columns
+            index:      The index of the element to be classified
+        Returns:
+            fitted_col: The list index of the column to add the index to
+        Raises:
+            None
+        """
+        other_cols_df = self.data.drop(self.columns[0])
+        #First find the left and right x points of the date. xd1 xd2
+        xd_dist = [[],[]]
+        if type(indices) != list:
+            indices = [indices]
+        xd1 = xd_dist[0].append(eval(df.loc[self.dates_row[0], "normed_vertices"])[3][0])
+        xd2 = xd_dist[1].append(eval(df.loc[self.dates_row[0], "normed_vertices"])[2][0])
+
+        #find left and right x points of the first column x1,x2 and then the 2nd x3,x4
+        x_dist = [[],[]]
+        x1 = x_dist[0].append(eval(df.loc[value1, "normed_vertices"])[3][0])
+        x2 = x_dist[1].append(eval(df.loc[value2, "normed_vertices"])[2][0])
+        #Second column
+        x3 = x_dist[0].append(eval(df.loc[value3, "normed_vertices"])[3][0])
+        x4 = x_dist[1].append(eval(df.loc[value4, "normed_vertices"])[2][0])
+        #this then checks if any part of xd1 or xd2 is within the range x1-x2
+        
+        
+            
+
+        
+        #if not then it checks the range x1-x4
+        #once grouped we can use these x1,x2 to find which way they are alligned 
+        
+        
+        return x1 #print(df)
     @staticmethod
     def group_header_points(df, header_indices):
         """
@@ -427,7 +526,7 @@ class TableFitter(TableIdentifier):
         """
 
         # Creates a new DataFrame to use and a list to add groups to
-        header_df = df.loc[header_indices, :]
+        header_df = df.loc[header_indices, :].sort_values(by = "central_x_vertex")
         header_groups = []
 
         # While we still have ungrouped indices
