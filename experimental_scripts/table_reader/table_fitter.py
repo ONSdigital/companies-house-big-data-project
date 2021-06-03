@@ -207,16 +207,17 @@ class TableFitter(TableIdentifier):
                     indices_close.append(i)
         elif alignment["aligned_index"] == None:
             indices_close = [[],[],[]]
-            for i in df.index:
+            for i in df.index:            
+                print(indices_close)
                 if TableFitter.is_close(alignment["median_points"][0],
                                 eval(df.loc[i, "normed_vertices"])[3][0],
                                 dist=d):
                     indices_close[0].append(i)
-                elif TableFitter.is_close(alignment["median_points"][1],
+                if TableFitter.is_close(alignment["median_points"][1],
                                 eval(df.loc[i, "normed_vertices"])[2][0],
                                 dist=d):
                     indices_close[1].append(i)
-                elif TableFitter.is_close(alignment["median_points"][2],
+                if TableFitter.is_close(alignment["median_points"][2],
                                 0.5*(eval(df.loc[i, "normed_vertices"])[2][0]
                                         + eval(df.loc[i, "normed_vertices"])[3][0]),
                                 dist=d):
@@ -533,14 +534,14 @@ class TableFitter(TableIdentifier):
         while header_df.shape[0] > 0:
             # Find the first elements of the dataframe
             first_ind = header_df.index[0]
-
+            print(f"This is the group value: {header_df.loc[first_ind, 'value']}")
             # Find the alignment object for that element
             aligner = TableFitter.find_alignment(header_df, first_ind)
 
             # Find the indices aligned to that object
             grouped_inds = TableFitter.find_aligned_indices(header_df,
                                                             aligner,
-                                                            d=0.04)
+                                                            d=0.005)
 
             # Add the group of indices to the list and remove them from the df
             header_groups.append(grouped_inds["indices"])
