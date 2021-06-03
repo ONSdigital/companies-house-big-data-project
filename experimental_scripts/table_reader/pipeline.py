@@ -87,6 +87,7 @@ table_data.get_header_row()
 table_data.remove_excess_lines()
 table_data.get_other_columns()
 #table_data.remove_excess_lines()
+table_data.group_value_points()
 
 #print(table_data.data)
 

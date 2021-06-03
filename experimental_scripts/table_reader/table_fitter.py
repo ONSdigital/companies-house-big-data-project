@@ -55,8 +55,6 @@ class TableFitter(TableIdentifier):
                           if self.data.loc[i, "value"].lower()
                           in ["note", "notes"]]           
         self.notes_tf = len(self.notes_row) != 0  
-        print(self.notes_tf)
-        print((5 * stats.median(self.data.loc[self.data.index,"height"])))
         
         years = range(1999,2050)
         years_two = range(0,50)       
@@ -208,7 +206,7 @@ class TableFitter(TableIdentifier):
         elif alignment["aligned_index"] == None:
             indices_close = [[],[],[]]
             for i in df.index:            
-                print(indices_close)
+                #print(indices_close)
                 if TableFitter.is_close(alignment["median_points"][0],
                                 eval(df.loc[i, "normed_vertices"])[3][0],
                                 dist=d):
@@ -491,7 +489,7 @@ class TableFitter(TableIdentifier):
         while header_df.shape[0] > 0:
             # Find the first elements of the dataframe
             first_ind = header_df.index[0]
-            print(f"This is the group value: {header_df.loc[first_ind, 'value']}")
+            #print(f"This is the group value: {header_df.loc[first_ind, 'value']}")
             # Find the alignment object for that element
             aligner = TableFitter.find_alignment(header_df, first_ind)
 
@@ -505,10 +503,18 @@ class TableFitter(TableIdentifier):
             header_df = header_df.drop(grouped_inds["indices"])
 
         return header_groups
-    @staticmethod  
-    def group_values_points(df)
+      
+    def group_value_points(self):
+        value_index = [] 
+     
+        header_values = self.dates_row + self.header_indices 
+        
+        
+        self.value_index = list(set(self.data.index) - (set(header_values) + set(self.columns[0])))
+        #check output and then check output with remove_excess_lines to see if this is required. 
 
-    return value_groups
+
+        return value_index
 
     def remove_excess_lines(self):
         min_line = min(self.data.loc[self.header_indices, "line_num"])
@@ -544,3 +550,5 @@ if __name__ == "__main__":
     table_data.get_header_row()
     table_data.remove_excess_lines()
     table_data.get_other_columns()
+    table_data.group_value_points()
+    
