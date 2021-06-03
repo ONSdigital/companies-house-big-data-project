@@ -466,50 +466,7 @@ class TableFitter(TableIdentifier):
             return fitted_col + 1
         else:
             return None
-    @staticmethod            
-    def find_closest_col_v2(df, columns, index, self):
-        """
-        Finds which column a given element (index) should be assigned to by
-        finding which header element it is closest to by using bounding boxes 
-        and comparing the ranges of the dates to the values contained in each columns 
-        left most side and right most and grouping them. 
-
-        Arguments:
-            df:         DataFrame to reference from
-            columns:    List of the x coordinates of the alignments of each of
-                        the columns
-            index:      The index of the element to be classified
-        Returns:
-            fitted_col: The list index of the column to add the index to
-        Raises:
-            None
-        """
-        other_cols_df = self.data.drop(self.columns[0])
-        #First find the left and right x points of the date. xd1 xd2
-        xd_dist = [[],[]]
-        if type(indices) != list:
-            indices = [indices]
-        xd1 = xd_dist[0].append(eval(df.loc[self.dates_row[0], "normed_vertices"])[3][0])
-        xd2 = xd_dist[1].append(eval(df.loc[self.dates_row[0], "normed_vertices"])[2][0])
-
-        #find left and right x points of the first column x1,x2 and then the 2nd x3,x4
-        x_dist = [[],[]]
-        x1 = x_dist[0].append(eval(df.loc[value1, "normed_vertices"])[3][0])
-        x2 = x_dist[1].append(eval(df.loc[value2, "normed_vertices"])[2][0])
-        #Second column
-        x3 = x_dist[0].append(eval(df.loc[value3, "normed_vertices"])[3][0])
-        x4 = x_dist[1].append(eval(df.loc[value4, "normed_vertices"])[2][0])
-        #this then checks if any part of xd1 or xd2 is within the range x1-x2
-        
-        
-            
-
-        
-        #if not then it checks the range x1-x4
-        #once grouped we can use these x1,x2 to find which way they are alligned 
-        
-        
-        return x1 #print(df)
+ 
     @staticmethod
     def group_header_points(df, header_indices):
         """
@@ -548,6 +505,10 @@ class TableFitter(TableIdentifier):
             header_df = header_df.drop(grouped_inds["indices"])
 
         return header_groups
+    @staticmethod  
+    def group_values_points(df)
+
+    return value_groups
 
     def remove_excess_lines(self):
         min_line = min(self.data.loc[self.header_indices, "line_num"])
