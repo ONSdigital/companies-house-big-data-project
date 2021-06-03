@@ -506,12 +506,11 @@ class TableFitter(TableIdentifier):
       
     def group_value_points(self):
         value_index = [] 
-     
+        
         header_values = self.dates_row + self.header_indices 
-        
-        
-        self.value_index = list(set(self.data.index) - (set(header_values) + set(self.columns[0])))
+        self.value_index = [i for i in self.data.index if i not in header_values]
         #check output and then check output with remove_excess_lines to see if this is required. 
+        print(self.value_index)
 
 
         return value_index
