@@ -11,6 +11,7 @@ class Table2Df:
         self.data = table_fit.data
         self.table_data = self.table.data.drop(self.table.header_indices)
 
+
         
     def reconstruct_table(self):
         """

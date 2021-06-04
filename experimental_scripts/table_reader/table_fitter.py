@@ -496,7 +496,7 @@ class TableFitter(TableIdentifier):
             # Find the indices aligned to that object
             grouped_inds = TableFitter.find_aligned_indices(header_df,
                                                             aligner,
-                                                            d=0.005)
+                                                            d=0.04)
 
             # Add the group of indices to the list and remove them from the df
             header_groups.append(grouped_inds["indices"])
@@ -505,15 +505,35 @@ class TableFitter(TableIdentifier):
         return header_groups
       
     def group_value_points(self):
+
         value_index = [] 
+        new_data = self.data.drop(self.columns[0])
         
-        header_values = self.dates_row + self.header_indices 
-        self.value_index = [i for i in self.data.index if i not in header_values]
+        header_values = list(set(self.dates_row + self.header_indices)) 
+        #header_values = list(set(self.header_indices)) #once it detects dates properly.
+        
+        value_index = list(new_data.index)
+        self.value_index = [i for i in value_index if i not in header_values]
         #check output and then check output with remove_excess_lines to see if this is required. 
-        print(self.value_index)
+        
+        print(self.data.loc[self.value_index],"new index")
+
+        grouped_value_index = self.group_header_points(self.data,
+                                                      self.value_index)  
+        #check table_data for valid columns , test d threshold 
+        print(grouped_value_index," grouped")
+        self.value_data = self.data.loc[self.value_index]
+        #self.table_data.data = self.data.loc[self.value_index]
+        
+          
 
 
-        return value_index
+
+
+
+        
+        
+        return grouped_value_index
 
     def remove_excess_lines(self):
         min_line = min(self.data.loc[self.header_indices, "line_num"])
