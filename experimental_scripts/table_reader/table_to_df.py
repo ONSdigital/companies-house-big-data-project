@@ -161,7 +161,6 @@ class Table2Df:
         """
         Creates a DataFrame of information of column info (meta data). For each column in
         our fitted table object, we record the corresponding date and units (currency).
-
         Arguments:
             years:          List of possible years to search for.
         Returns:
@@ -171,15 +170,30 @@ class Table2Df:
             None
         """
         #Converts "column" column into a sorted unique list and removes the unlabeled first column
-        sorted_column = list(set(self.table.data["column"]))     
-        sorted_column = [0 if x != x else x for x in sorted_column]
+        sorted_column = list(set(self.table.data["column"]))  
+        sorted_column = [x for x in sorted_column if str(x)!="nan"]
+        #sorted_column = list(set(sorted_column))     
         print('hello', sorted_column)
         sorted_column.sort()
+        sorted_column.remove(0)
+
+        notes_allignment = self.table.find_alignment(self.table.data)["median_points"]
+        print(notes_allignment, notes_allignment["median_points"])
+        notes_data =self.table.find_alignment(self.table.data, self.table.notes_row)
+        print(notes_data, notes_data["median_points"])
+        closest_col = self.find_closest_col(notes_data, self.table.header_coords, 1)
         if self.table.notes_tf:
-            sorted_column.pop(0)
+            print(self.table.notes_row[0])
+            notes_col = self.table.data.loc[self.table.notes_row[0],"column"]
+            
+            print(notes_col)
+            sorted_column.remove(notes_col)
+        print('after drop', sorted_column)
+        #assign notes row a colomn and then drop it. 
+        
+        #data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.value_data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
 
-        data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
-
+        print(data_cols)
         df = self.table.data
         print(df)
         column_groups = []

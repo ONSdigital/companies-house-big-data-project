@@ -292,7 +292,7 @@ class TableFitter(TableIdentifier):
             if any([(i in self.columns[0])
                     for i in self.data[self.data["line_num"] == l].index]):
                 break
-            elif y0 - y1 > 1.5*h:
+            elif y0 - y1 > 2*h:#1.5
                 break
             else:
                 header_lines.append(l)
@@ -303,6 +303,7 @@ class TableFitter(TableIdentifier):
         self.header_indices = header_indices
         self.header_groups = self.group_header_points(self.data,
                                                       self.header_indices)
+        
         self.header_coords = \
             [self.find_alignment(self.data, i)["median_points"]
              for i in self.header_groups]
@@ -322,23 +323,23 @@ class TableFitter(TableIdentifier):
         """
 
         # Don't consider elements in the first column
-        other_cols_df = self.data.drop(self.columns[0])
+        #other_cols_df = self.data.drop(self.columns[0])
 
         # Add a list to the columns attribute for each in the header row
-        for i in range(len(self.header_coords)):
-            self.columns.append([])
+        #for i in range(len(self.header_coords)):
+        #    self.columns.append([])
 
-        exceptions = []
+        #exceptions = []
 
         # For each element not in a column add the index to a column
-        for i in other_cols_df.index:
-            col_to_fit = \
-                self.find_closest_col(other_cols_df, self.header_coords, i)
-            if col_to_fit != None:
-                self.data.loc[i, "column"] = int(col_to_fit)
-                self.columns[col_to_fit].append(i)
-            else:
-                exceptions.append(i)
+        # for i in other_cols_df.index:
+        #     col_to_fit = \
+        #         self.find_closest_col(other_cols_df, self.header_coords, i)
+        #     if col_to_fit != None:
+        #         self.data.loc[i, "column"] = int(col_to_fit)
+        #         self.columns[col_to_fit].append(i)
+        #     else:
+        #         exceptions.append(i)
 
         #print('This is what it looked like',self.data)
 
@@ -349,7 +350,7 @@ class TableFitter(TableIdentifier):
         # evaluate residual elements and append a new column if 
         # a critera is met:
         # (more than 2 elements, high confidence or if any value is a digit)
-
+        #check value_index and check for anomolies ####
         for x in exception_aligned:
             c = max(self.data.column)
             print('Original C',c)
@@ -501,38 +502,39 @@ class TableFitter(TableIdentifier):
             # Add the group of indices to the list and remove them from the df
             header_groups.append(grouped_inds["indices"])
             header_df = header_df.drop(grouped_inds["indices"])
+            df.dropna()
 
         return header_groups
       
     def group_value_points(self):
-
+        print(self.data)
         value_index = [] 
         new_data = self.data.drop(self.columns[0])
         
-        header_values = list(set(self.dates_row + self.header_indices)) 
-        #header_values = list(set(self.header_indices)) #once it detects dates properly.
+        #header_values = list(set(self.dates_row + self.header_indices)) 
+        header_values = list(set(self.header_indices)) #once it detects dates properly.
         
         value_index = list(new_data.index)
         self.value_index = [i for i in value_index if i not in header_values]
-        #check output and then check output with remove_excess_lines to see if this is required. 
         
-        print(self.data.loc[self.value_index],"new index")
-
         grouped_value_index = self.group_header_points(self.data,
-                                                      self.value_index)  
+                                                      self.value_index)  #index of values sorted into columns
+
+        self.value_data = self.data.loc[self.value_index] #dataframe that contains only the values and not asset row or headers 
+        
+        
+        for i,x in enumerate(grouped_value_index):
+            for v in x:
+                self.data.loc[v,"column"] = int(i+1)
+        print(self.data, " with nan added to entire dataframe")
+        
+        #for i in self.data.index:
+        #    self.data.loc[i,"column"] = self.data.loc[i,"column"][np.logical_not(np.isnan(self.data.loc[i,"column"]))]
+        
         #check table_data for valid columns , test d threshold 
         print(grouped_value_index," grouped")
-        self.value_data = self.data.loc[self.value_index]
-        #self.table_data.data = self.data.loc[self.value_index]
-        
-          
 
-
-
-
-
-        
-        
+  
         return grouped_value_index
 
     def remove_excess_lines(self):

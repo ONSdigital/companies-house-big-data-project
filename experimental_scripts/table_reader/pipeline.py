@@ -64,7 +64,7 @@ fs = gcsfs.GCSFileSystem("ons-companies-house-dev", token="/home/andre_faul/keys
 # df = pd.read_csv("gs://ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/doc_ai_token_dfs/04391694_active_bs_tokens.csv")
 #
 doc_parser = DocParser(fs) #02460543_dormant_bs 04391694_active_bs SC564642_bs astra_zeneca_bs 03541703_bs 04391694_active_bs   03875584_bs  (04416996_bs mod 0 error)
-doc_parser.parse_document("ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/bs_pdfs/astra_zeneca_bs.pdf",
+doc_parser.parse_document("ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/bs_pdfs/04391694_active_bs.pdf",
                           "/home/andre_faul/keys/dev_key.json",
                           "ons-companies-house-dev")
 doc_parser.tokens_to_df()
@@ -85,7 +85,7 @@ table_data.clean_values()
 table_data.get_first_col()
 table_data.get_header_row()
 table_data.remove_excess_lines()
-table_data.get_other_columns()
+#table_data.get_other_columns()
 #table_data.remove_excess_lines()
 table_data.group_value_points()
 
