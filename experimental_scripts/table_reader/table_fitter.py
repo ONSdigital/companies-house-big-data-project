@@ -307,6 +307,7 @@ class TableFitter(TableIdentifier):
         self.header_coords = \
             [self.find_alignment(self.data, i)["median_points"]
              for i in self.header_groups]
+        
         print(len(header_lines), " header lines have been detected")
 
     def get_other_columns(self,thresh=0.95): 
@@ -328,7 +329,6 @@ class TableFitter(TableIdentifier):
         # Add a list to the columns attribute for each in the header row
         #for i in range(len(self.header_coords)):
         #    self.columns.append([])
-
         #exceptions = []
 
         # For each element not in a column add the index to a column
@@ -430,7 +430,7 @@ class TableFitter(TableIdentifier):
     
         
     @staticmethod
-    def find_closest_col(df, columns, index, const=4):
+    def find_closest_col(df, columns, index, const=5):
         """
         Finds which column a given element (index) should be assigned to by
         finding which header element it is closest to.
@@ -459,7 +459,7 @@ class TableFitter(TableIdentifier):
         fitted_col = dists.index(min(dists))
         
         
-        if dists[fitted_col] <= 5*stats.median(df.loc[df.index,"height"]):#* stats.median(self.data.loc["height"]): #(const*eval(df.loc[index, "normed_vertices"])[0][1]
+        if dists[fitted_col] <= const*stats.median(df.loc[df.index,"height"]):#* stats.median(self.data.loc["height"]): #(const*eval(df.loc[index, "normed_vertices"])[0][1]
                           #- eval(df.loc[index, "normed_vertices"])[0][1]):
                        
             return fitted_col + 1
@@ -507,7 +507,7 @@ class TableFitter(TableIdentifier):
         return header_groups
       
     def group_value_points(self):
-        print(self.data)
+        #print(self.data)
         value_index = [] 
         new_data = self.data.drop(self.columns[0])
         
@@ -526,14 +526,14 @@ class TableFitter(TableIdentifier):
         for i,x in enumerate(grouped_value_index):
             for v in x:
                 self.data.loc[v,"column"] = int(i+1)
-        print(self.data, " with nan added to entire dataframe")
+        #print(self.data, " with nan added to entire dataframe")
         
         #for i in self.data.index:
         #    self.data.loc[i,"column"] = self.data.loc[i,"column"][np.logical_not(np.isnan(self.data.loc[i,"column"]))]
         
         #check table_data for valid columns , test d threshold 
-        print(grouped_value_index," grouped")
-
+        #print(grouped_value_index," grouped")
+        self.grouped_value_index = grouped_value_index
   
         return grouped_value_index
 

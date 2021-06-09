@@ -134,7 +134,7 @@ class Table2Df:
         
         self.data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
         data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf )]
-        
+
         currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         currency = max(set(currencies), key=currencies.count)
@@ -176,26 +176,24 @@ class Table2Df:
         print('hello', sorted_column)
         sorted_column.sort()
         sorted_column.remove(0)
+        
+        column_coords = \
+            [self.table.find_alignment(self.table.data, i)["median_points"]
+             for i in self.table.grouped_value_index]
 
-        notes_allignment = self.table.find_alignment(self.table.data)["median_points"]
-        print(notes_allignment, notes_allignment["median_points"])
-        notes_data =self.table.find_alignment(self.table.data, self.table.notes_row)
-        print(notes_data, notes_data["median_points"])
-        closest_col = self.find_closest_col(notes_data, self.table.header_coords, 1)
+        notes_col = self.table.find_closest_col(self.table.data, column_coords,self.table.notes_row[0])
+        self.table.data.loc[self.table.notes_row,"column"] = notes_col
         if self.table.notes_tf:
-            print(self.table.notes_row[0])
-            notes_col = self.table.data.loc[self.table.notes_row[0],"column"]
-            
-            print(notes_col)
+            print(notes_col,"notes col")
             sorted_column.remove(notes_col)
         print('after drop', sorted_column)
         #assign notes row a colomn and then drop it. 
         
         #data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.value_data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
-
-        print(data_cols)
+        data_cols = sorted_column
+        #print(data_cols)
         df = self.table.data
-        print(df)
+        #print(df)
         column_groups = []
         current_group = []
         dates = []
@@ -236,6 +234,21 @@ class Table2Df:
 
             print('SORTED COLUMNS', data_cols)
         print(column_groups)
+
+        currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
+                            len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
+        currency = max(set(currencies), key=currencies.count)
+
+        print([self.table.data.loc[self.table.dates_row[0], "value"]],"notes row value")
+        header_dict = {"column":[column_groups, "date":[[self.table.data.loc[self.table.dates_row[i], "value"]] for i in range(len(self.table.dates_row))], 
+                        "unit":[currency]*len(column_groups)}
+        
+        
+        print(header_dict,"header dictionary")
+
+        # Create an empty DataFrame to add information to
+        header_data = pd.DataFrame.from_dict(header_dict)
+        return header_data
 
         # for i in self.table.dates_row:
         #     dates.append(df.loc[i, "value"])
