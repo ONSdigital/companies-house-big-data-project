@@ -191,13 +191,16 @@ class Table2Df:
         
         #data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.value_data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
         data_cols = sorted_column
+        
         #print(data_cols)
         df = self.table.data
+        print(sorted_column," sorted column",data_cols)
+        
         #print(df)
         column_groups = []
         current_group = []
         dates = []
-
+        dict_column_grouping = {"column":[],"date":[],"unit":[]}
         date_counter = 0
         while len(data_cols) > 0:
             print(date_counter)            
@@ -224,30 +227,39 @@ class Table2Df:
 
             if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex:
                 column_groups.append(current_group)
+                
 
                 # update date counter
                 date_counter += 1
                 # refresh current group
                 current_group = []
-
+             
             data_cols.pop(0)
-
+            dict_column_grouping["date"].append(df.loc[assignment_date,"value"])
+            dict_column_grouping["column"].append(target_column)
+            
+                
             print('SORTED COLUMNS', data_cols)
-        print(column_groups)
-
+        #print(column_groups)
+        
+        
         currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         currency = max(set(currencies), key=currencies.count)
-
-        print([self.table.data.loc[self.table.dates_row[0], "value"]],"notes row value")
-        header_dict = {"column":[column_groups, "date":[[self.table.data.loc[self.table.dates_row[i], "value"]] for i in range(len(self.table.dates_row))], 
-                        "unit":[currency]*len(column_groups)}
+        dict_column_grouping["unit"] = [currency]*len(dict_column_grouping["column"])
+        print(dict_column_grouping)
+        
+        #header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
+        #                "unit":[currency]*len(data_cols)}
+        
+        #dict_column_grouping = {"column":column_groups, "date":[[self.table.data.loc[self.table.dates_row[i], "value"]] for i in range(len(seto_row))], 
+        #                "unit":[currency]*len(sorted_column)}
         
         
-        print(header_dict,"header dictionary")
+        print(dict_column_grouping,"header dictionary")
 
         # Create an empty DataFrame to add information to
-        header_data = pd.DataFrame.from_dict(header_dict)
+        header_data = pd.DataFrame.from_dict(dict_column_grouping)
         return header_data
 
         # for i in self.table.dates_row:
