@@ -103,8 +103,15 @@ def get_xbrl_files(event, context):
     zip_path = event["attributes"]["zip_path"]
     bq_location = os.environ['parsed_bq_table_location']
     project = os.environ['project']
-    test_run = event["attributes"]["test"]
     bucket = os.environ["unpacked_bucket"] 
+    
+    test_run = False
+    try:
+        if "test" in event["attributes"].keys():
+            test_run = eval(event["attributes"]["test"])
+    except:
+        pass
+    
     # Create a GCSFS object
     fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
