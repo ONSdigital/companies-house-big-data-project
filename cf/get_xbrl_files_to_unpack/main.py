@@ -1,6 +1,7 @@
 import base64
 import gcsfs
 import zipfile
+import os
 from google.cloud import pubsub_v1, bigquery
 
 def callback(future):

@@ -5,6 +5,7 @@ import gcsfs
 import time
 import datetime as dt
 import pytz
+import os
 
 def check_parser(event, content):
     """
