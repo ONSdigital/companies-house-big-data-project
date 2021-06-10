@@ -82,7 +82,7 @@ class TableFitter(TableIdentifier):
         
 
         self.assets_row = [i for i in self.data.index
-                           if "asset" in self.data.loc[i, "value"].lower()]
+                           if "asset" in self.data.loc[i, "value"].lower()] #add in varying phrases this can be. 
         
     
     def get_first_col(self):
@@ -310,123 +310,6 @@ class TableFitter(TableIdentifier):
         
         print(len(header_lines), " header lines have been detected")
 
-    def get_other_columns(self,thresh=0.95): 
-        """
-        Function to group the indices of columns other than the first, based
-        on elements which are aligned with the elements in the header row.
-
-        Arguments:
-            None
-        Returns:
-            exceptions: a list containing the indices of elements that are not 
-        Raises:
-            None
-        """
-
-        # Don't consider elements in the first column
-        #other_cols_df = self.data.drop(self.columns[0])
-
-        # Add a list to the columns attribute for each in the header row
-        #for i in range(len(self.header_coords)):
-        #    self.columns.append([])
-        #exceptions = []
-
-        # For each element not in a column add the index to a column
-        # for i in other_cols_df.index:
-        #     col_to_fit = \
-        #         self.find_closest_col(other_cols_df, self.header_coords, i)
-        #     if col_to_fit != None:
-        #         self.data.loc[i, "column"] = int(col_to_fit)
-        #         self.columns[col_to_fit].append(i)
-        #     else:
-        #         exceptions.append(i)
-
-        #print('This is what it looked like',self.data)
-
-        # determine if any residual elements are aligned
-        exception_aligned = TableFitter.group_header_points(other_cols_df, exceptions)
-        print(exception_aligned)
-        
-        # evaluate residual elements and append a new column if 
-        # a critera is met:
-        # (more than 2 elements, high confidence or if any value is a digit)
-        #check value_index and check for anomolies ####
-        for x in exception_aligned:
-            c = max(self.data.column)
-            print('Original C',c)
-            if len(x) > 1:
-                c += 1
-                self.data.loc[[i for i in x], "column"] = int(c)
-            else:
-                if self.data.loc[x[0],"confidence"] > thresh:
-                    c += 1
-                    self.data.loc[x[0], "column"] = int(c)
-
-                elif any(str.isdigit(c) for c in self.data.loc[x[0],'value']):
-                    c += 1
-                    self.data.loc[x[0], "column"] = int(c)
-                else:
-                    pass
-
-        #print('Did i do anything?', self.data)
-
-        return()
-    """
-    def headerless_column(self,exceptions):
-        
-        Function to add any exception elements in the scraped 
-        data, if are headerless columns of data. 
-        Uses a condifence threshold and the number of allined elements
-        to determine whetehr the data is an additional column 
-
-        Arguments:
-            execptions: 
-        Returns:
-            None
-        Raises:
-            None
-        
-    """
-    
-    def get_other_columns_v2(self):
-        """
-        Function to group the indices of columns other than the first, without
-        using the detected header as a reference.
-
-        Arguments:
-            None
-        Returns:
-            None
-        Raises:
-            None
-        """
-
-        # Don't consider elements in the first column
-        other_cols_df = self.data.drop(self.columns[0]).sort_values(["line_num", "first_x_vertex"], ascending=[True, True])
-
-        columns_data = []
-
-        for index, row in other_cols_df.iterrows():
-            v1, v2 = eval(row["normed_vertices"])[3][0], eval(row["normed_vertices"])[2][0]
-            for col in columns_data:
-                if (v2 > col["xs"][0]) & (v1 < col["xs"][1]):
-                    col["indices"].append(index)
-                    col["xs"] = [min(v1, col["xs"][0]), max(v2, col["xs"][1])]
-                    break
-            else:
-                columns_data.append({"xs":[v1, v2], "indices":[index]})
-        if len(columns_data) > len(self.header_groups):
-            columns_data = sorted(columns_data, key = lambda k: len(k["indices"]))[(len(columns_data) - len(self.header_groups)):]
-        elif len(columns_data) < len(self.header_groups):
-            print("Not enough columns have been detected")
-            return 0
-
-        columns_data = sorted(columns_data, key=lambda k: k["xs"][0])
-        self.columns += [col["indices"] for col in columns_data]
-
-        for i, col in enumerate(self.columns):
-            self.data.loc[col, "column"] = i
-
     
         
     @staticmethod
@@ -527,10 +410,7 @@ class TableFitter(TableIdentifier):
             for v in x:
                 self.data.loc[v,"column"] = int(i+1)
         #print(self.data, " with nan added to entire dataframe")
-        
-        #for i in self.data.index:
-        #    self.data.loc[i,"column"] = self.data.loc[i,"column"][np.logical_not(np.isnan(self.data.loc[i,"column"]))]
-        
+      
         #check table_data for valid columns , test d threshold 
         #print(grouped_value_index," grouped")
         self.grouped_value_index = grouped_value_index

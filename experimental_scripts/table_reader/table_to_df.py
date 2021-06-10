@@ -61,102 +61,9 @@ class Table2Df:
             str_headers.append(new_string)
         return str_headers
 
-    def get_info_headers(self, years = range(1,20)):
-        """
-        Creates a DataFrame of information of column info (meta data). For each column in
-        our fitted table object, we record the corresponding date and units (currency).
+    
 
-        Arguments:
-            years:          List of possible years to search for.
-        Returns:
-            header_data:    pandas DataFrame of column number with their relevant date and units
-                            as other variables
-        Raises:
-            None
-        """
-        # Get a list of header indicies where we see a currency symbol
-        currency_indexes = [i for i in self.table.header_indices if
-                            len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
-        self.unit_headers = currency_indexes
-        
-        # As above but for where we see a year
-        date_indexes = []
-        for i in self.table.header_indices:
-            contains_year = any([str(y).zfill(2) in self.data.loc[i, "value"] for y in years])
-            if contains_year:
-                date_indexes.append(i)
-        self.date_headers = date_indexes
-
-        # Create an empty DataFrame to add information to
-        header_data = pd.DataFrame(columns=["column", "date", "unit"])
-
-        # Add information for each column header to the DataFrame
-        for i, g in enumerate(self.table.header_groups):
-            unit_col = [j for j in g if j in self.unit_headers]
-            date_col = [j for j in g if j in self.date_headers]
-            if len(unit_col)==1  or len(date_col)==1:
-                header_data.loc[i, "column"] = i+1
-
-                # Work out the unit if we don't have one assigned
-                if not unit_col:
-                    header_data.loc[i, "date"] = self.data.loc[date_col[0], "value"]
-                    header_data.loc[i, "unit"] = self.get_closest_el(self.data, date_col[0], self.unit_headers)
-                # As above but for dates
-                elif not date_col:
-                    header_data.loc[i, "date"] = self.get_closest_el(self.data, unit_col[0], self.date_headers)
-                    header_data.loc[i, "unit"] = self.data.loc[unit_col[0], "value"]
-                # If we already have both add them to the dataset
-                else:
-                    header_data.loc[i, "date"] = self.data.loc[date_col[0], "value"]
-                    header_data.loc[i, "unit"] = self.data.loc[unit_col[0], "value"]
-        return header_data
-
-
-    def get_info_headers_v2(self, years = range(1,20)):
-        """
-        Creates a DataFrame of information of column info (meta data). For each column in
-        our fitted table object, we record the corresponding date and units (currency).
-
-        Arguments:
-            years:          List of possible years to search for.
-        Returns:
-            header_data:    pandas DataFrame of column number with their relevant date and units
-                            as other variables
-        Raises:
-            None
-        """
-        #Converts "column" column into a sorted unique list and removes the unlabeled first column
-        sorted_column = list(set(self.table.data["column"]))     
-        sorted_column = [0 if x != x else x for x in sorted_column]
-        sorted_column.sort()
-        if self.table.notes_tf:
-            sorted_column.pop(0)
-        
-        self.data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
-        data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf )]
-
-        currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
-                            len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
-        currency = max(set(currencies), key=currencies.count)
-        
-        # As above but for where we see a year
-        dates = []
-        for i in self.table.header_indices:
-            contains_year = any([str(y).zfill(2) in self.data.loc[i, "value"] for y in years])
-            if contains_year:
-                dates.append(self.data.loc[i, "value"])
-        self.dates = dates
-        
-        if len(data_cols)%len(dates) != 0:
-            raise(TypeError("Cannot logically fit dates to columns"))
-        else:
-            header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
-                        "unit":[currency]*len(data_cols)}
-
-
-        # Create an empty DataFrame to add information to
-        header_data = pd.DataFrame.from_dict(header_dict)
-        return header_data
+    
     def get_info_headers_v3(self):
         """
         Creates a DataFrame of information of column info (meta data). For each column in
@@ -183,18 +90,19 @@ class Table2Df:
 
         notes_col = self.table.find_closest_col(self.table.data, column_coords,self.table.notes_row[0])
         self.table.data.loc[self.table.notes_row,"column"] = notes_col
+        print(notes_col)
         if self.table.notes_tf:
+            #can do if statement that checks if there are any values in the notes row.
             print(notes_col,"notes col")
             sorted_column.remove(notes_col)
         print('after drop', sorted_column)
         #assign notes row a colomn and then drop it. 
         
-        #data_cols = [i+1 for i,g in enumerate(sorted_column) if (int(self.table.value_data.loc[self.table.notes_row[0], "column"]) != g or not self.table.notes_tf)]
         data_cols = sorted_column
         
         #print(data_cols)
         df = self.table.data
-        print(sorted_column," sorted column",data_cols)
+    
         
         #print(df)
         column_groups = []
@@ -203,7 +111,7 @@ class Table2Df:
         dict_column_grouping = {"column":[],"date":[],"unit":[]}
         date_counter = 0
         while len(data_cols) > 0:
-            print(date_counter)            
+            #print(date_counter)            
             # date index we want to assoicate to columns
             assignment_date = self.table.dates_row[date_counter]
             
@@ -216,98 +124,44 @@ class Table2Df:
 
             # update column grouping with current column
             current_group.append(target_column)
-            print(current_group)
+            #print(current_group)
 
             # determine the left and right edges of column  
             left_vertex = min([eval(v)[3][0] for v in df.loc[df["column"] == min(current_group),"normed_vertices"]])
             
             right_vertex = max([eval(v)[2][0] for v in df.loc[df["column"] == max(current_group),"normed_vertices"]])
 
-            print(left_vertex, date_x1, date_x2, right_vertex)
+            #print(left_vertex, date_x1, date_x2, right_vertex)
 
             if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex:
                 column_groups.append(current_group)
-                
 
                 # update date counter
                 date_counter += 1
                 # refresh current group
                 current_group = []
-             
+            print(date_counter)
             data_cols.pop(0)
             dict_column_grouping["date"].append(df.loc[assignment_date,"value"])
             dict_column_grouping["column"].append(target_column)
             
                 
             print('SORTED COLUMNS', data_cols)
-        #print(column_groups)
+        print(column_groups)
         
         
         currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         currency = max(set(currencies), key=currencies.count)
         dict_column_grouping["unit"] = [currency]*len(dict_column_grouping["column"])
-        print(dict_column_grouping)
-        
-        #header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
-        #                "unit":[currency]*len(data_cols)}
-        
-        #dict_column_grouping = {"column":column_groups, "date":[[self.table.data.loc[self.table.dates_row[i], "value"]] for i in range(len(seto_row))], 
-        #                "unit":[currency]*len(sorted_column)}
-        
-        
         print(dict_column_grouping,"header dictionary")
+
 
         # Create an empty DataFrame to add information to
         header_data = pd.DataFrame.from_dict(dict_column_grouping)
         return header_data
 
-        # for i in self.table.dates_row:
-        #     dates.append(df.loc[i, "value"])
-        #     k = df.loc[i, "value"]
-        #     #need to not count asset row
-        #     for g,e in enumerate(sorted_column):
-        #         date_x1 = eval(df.loc[i, "normed_vertices"])[3][0]
-        #         date_x2 = eval(df.loc[i, "normed_vertices"])[2][0]
-                
-        #         left_vertex = min([eval(v)[3][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
-        #         right_vertex = max([eval(v)[2][0] for v in df.loc[df["column"]==g,"normed_vertices"]])
-                
-        #         right_vertex2 = max([eval(v)[2][0] for v in df.loc[df["column"]==g+1,"normed_vertices"]])
-                
-        #         if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex:
-        #             date_assoication[k] = [g]
-        #             self.data_cols.append(g)
-        #             #print(data_cols)
-        #             #need to add the column instead and work out how to match to columns ASK Dylan. 
-        #         elif left_vertex <= date_x1 <= right_vertex2 and left_vertex <= date_x2 <= right_vertex2:
-        #         #else:
-        #             date_assoication[k] = [g,g+1]
-        #             self.data_cols.append(g)
-        #             self.data_cols.append(g+1)
-        #             e =+ 2
-
-        #     print(date_assoication)
-        #     print(self.data_cols)
-        # #-print(data_cols)
-        # currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
-        #                     len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
-        # currency = max(set(currencies), key=currencies.count)
-        
-        # # As above but for where we see a year
-        
-        # #self.dates = self.table.dates_row
-        # #dates = self.table.dates_row
-        # print(dates,"dates col col")
-        
-        # header_dict = {"column": data_cols, "date":[dates[i//(len(data_cols)//len(dates))] for i in range(len(data_cols))], 
-        #                 "unit":[currency]*len(data_cols)}
-
-
-        # # Create an empty DataFrame to add information to
-        # header_data = pd.DataFrame.from_dict(header_dict)
-        # return header_data
-
+  
     def get_final_df(self):
         """
         Get a final DataFrame in a similar form as how we scraped xbrl data ("name", "value", "date", "unit"
