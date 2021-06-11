@@ -199,7 +199,7 @@ def export_csv(bq_table, gcs_location, file_name):
     # Set up a gcs storage client and locations for things
     storage_client = storage.Client()       
     bucket = storage_client.bucket(gcs_location.split("/",1)[0])
-    destination = bucket.blob(gcs_location + "/" + file_name + ".csv")
+    destination = bucket.blob(file_name + ".csv")
     destination.content_type = "text/csv"
 
     # Combine all the specified files
