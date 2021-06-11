@@ -390,15 +390,25 @@ class TableFitter(TableIdentifier):
         return header_groups
       
     def group_value_points(self):
-        #print(self.data)
-        value_index = [] 
-        new_data = self.data.drop(self.columns[0])
+        """
+        Function that seperates the headers and assets row to produce the set of indices relating 
+        to the data of "values" in the table.
+
+        Arguments:
+            none
+        Returns:
+            grouped_value_index: list of indices with columns relating to the data "values" 
+        Raises:
+            None
+        """
         
-        #header_values = list(set(self.dates_row + self.header_indices)) 
+        value_index = [] 
+        new_data = self.data.drop(self.columns[0]) #remove assets column
+         
         header_values = list(set(self.header_indices)) #once it detects dates properly.
         
         value_index = list(new_data.index)
-        self.value_index = [i for i in value_index if i not in header_values]
+        self.value_index = [i for i in value_index if i not in header_values] #removes header which includes notes and dates. 
         
         grouped_value_index = self.group_header_points(self.data,
                                                       self.value_index)  #index of values sorted into columns
@@ -406,13 +416,12 @@ class TableFitter(TableIdentifier):
         self.value_data = self.data.loc[self.value_index] #dataframe that contains only the values and not asset row or headers 
         
         
-        for i,x in enumerate(grouped_value_index):
+        for i,x in enumerate(grouped_value_index):# assign columns
             for v in x:
                 self.data.loc[v,"column"] = int(i+1)
         #print(self.data, " with nan added to entire dataframe")
       
         #check table_data for valid columns , test d threshold 
-        #print(grouped_value_index," grouped")
         self.grouped_value_index = grouped_value_index
   
         return grouped_value_index
@@ -450,6 +459,5 @@ if __name__ == "__main__":
     table_data.get_first_col()
     table_data.get_header_row()
     table_data.remove_excess_lines()
-    table_data.get_other_columns()
     table_data.group_value_points()
     

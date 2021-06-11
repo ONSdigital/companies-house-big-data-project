@@ -69,7 +69,7 @@ class Table2Df:
         Creates a DataFrame of information of column info (meta data). For each column in
         our fitted table object, we record the corresponding date and units (currency).
         Arguments:
-            years:          List of possible years to search for.
+            self: 
         Returns:
             header_data:    pandas DataFrame of column number with their relevant date and units
                             as other variables
