@@ -79,6 +79,7 @@ class Table2Df:
         #Converts "column" column into a sorted unique list and removes the unlabeled first column
         sorted_column = list(set(self.table.data["column"]))  
         sorted_column = [x for x in sorted_column if str(x)!="nan"]
+
         #sorted_column = list(set(sorted_column))     
         print('hello', sorted_column)
         sorted_column.sort()
@@ -91,19 +92,18 @@ class Table2Df:
         notes_col = self.table.find_closest_col(self.table.data, column_coords,self.table.notes_row[0])
         self.table.data.loc[self.table.notes_row,"column"] = notes_col
         print(notes_col)
+        #assign notes row a colomn and then drop it. 
         if self.table.notes_tf:
             #can do if statement that checks if there are any values in the notes row.
             print(notes_col,"notes col")
             sorted_column.remove(notes_col)
         print('after drop', sorted_column)
-        #assign notes row a colomn and then drop it. 
-        
         data_cols = sorted_column
         
+        
+    
         #print(data_cols)
         df = self.table.data
-    
-        
         #print(df)
         column_groups = []
         current_group = []
@@ -141,6 +141,7 @@ class Table2Df:
                 # refresh current group
                 current_group = []
             print(date_counter)
+            #append dates and columns to the dictionary
             data_cols.pop(0)
             dict_column_grouping["date"].append(df.loc[assignment_date,"value"])
             dict_column_grouping["column"].append(target_column)
@@ -149,7 +150,7 @@ class Table2Df:
             print('SORTED COLUMNS', data_cols)
         print(column_groups)
         
-        
+        #find and set currencies
         currencies = [self.data.loc[i, "value"] for i in self.table.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         currency = max(set(currencies), key=currencies.count)

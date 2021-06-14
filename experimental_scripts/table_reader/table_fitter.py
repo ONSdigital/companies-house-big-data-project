@@ -80,10 +80,14 @@ class TableFitter(TableIdentifier):
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         self.unit_headers = currency_indexes
         
+        self.notes_row = [i for i in self.data.index
+                          if self.data.loc[i, "value"].lower()
+                          in ["note", "notes"]]           
 
         self.assets_row = [i for i in self.data.index
                            if "asset" in self.data.loc[i, "value"].lower()] #add in varying phrases this can be. 
-        
+        self.assets_row = [i for i in self.data.index
+                            if "asset", ]
     
     def get_first_col(self):
         """
@@ -403,25 +407,26 @@ class TableFitter(TableIdentifier):
         """
         
         value_index = [] 
-        new_data = self.data.drop(self.columns[0]) #remove assets column
-         
-        header_values = list(set(self.header_indices)) #once it detects dates properly.
+        #remove assets column
+        new_data = self.data.drop(self.columns[0]) 
+        #Set of data values
+        header_values = list(set(self.header_indices)) 
         
         value_index = list(new_data.index)
-        self.value_index = [i for i in value_index if i not in header_values] #removes header which includes notes and dates. 
+        #creates set of indices relating to data alues
+        self.value_index = [i for i in value_index if i not in header_values] 
         
+        #index of values sorted into columns
         grouped_value_index = self.group_header_points(self.data,
-                                                      self.value_index)  #index of values sorted into columns
-
-        self.value_data = self.data.loc[self.value_index] #dataframe that contains only the values and not asset row or headers 
+                                                      self.value_index)  
+        #dataframe that contains only the values and not asset row or headers                                               
+        self.value_data = self.data.loc[self.value_index] 
         
-        
-        for i,x in enumerate(grouped_value_index):# assign columns
+        #assign columns
+        for i,x in enumerate(grouped_value_index):
             for v in x:
                 self.data.loc[v,"column"] = int(i+1)
         #print(self.data, " with nan added to entire dataframe")
-      
-        #check table_data for valid columns , test d threshold 
         self.grouped_value_index = grouped_value_index
   
         return grouped_value_index
