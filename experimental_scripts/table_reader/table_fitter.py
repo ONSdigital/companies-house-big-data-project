@@ -79,16 +79,30 @@ class TableFitter(TableIdentifier):
         currency_indexes = [i for i in self.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         self.unit_headers = currency_indexes
-        
-        self.notes_row = [i for i in self.data.index
-                          if self.data.loc[i, "value"].lower()
-                          in ["note", "notes"]]           
 
+        # asset_data = ["asset","profit"]
+        # asset_index = []
+        # for i in self.data.index: 
+        #     contains_value = any([str(y) == self.data.loc[i, "value"] for y in asset_data])
+        #     if contains_value: 
+        #         asset_index.append(i)
+        #         self.assets_row = asset_index
+
+        #just do the original method twice
         self.assets_row = [i for i in self.data.index
-                           if "asset" in self.data.loc[i, "value"].lower()] #add in varying phrases this can be. 
-        self.assets_row = [i for i in self.data.index
-                            if "asset", ]
-    
+                           if "asset" in self.data.loc[i, "value"].lower()]
+        if len(self.assets_row) == 0:
+             self.assets_row = [i for i in self.data.index
+                             if "profit" in self.data.loc[i, "value"].lower()]
+
+        # print(self.assets_row)
+        # for i in self.data.index:
+        #     if "asset" in self.data.loc[i, "value"].lower() == TRUE:
+        #         self.assets_row = self.data.loc[i, "value"].lower()
+        #     elif "profit" in self.data.loc[i, "value"].lower()] == TRUE #add in varying phrases this can be. 
+        #         self.assets_row = self.data.loc[i, "value"].lower()
+        
+        print(self.assets_row,"assets row")
     def get_first_col(self):
         """
         Gets the indices of the first column of a table and saves
