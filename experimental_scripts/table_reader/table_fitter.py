@@ -80,27 +80,14 @@ class TableFitter(TableIdentifier):
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         self.unit_headers = currency_indexes
 
-        # asset_data = ["asset","profit"]
-        # asset_index = []
-        # for i in self.data.index: 
-        #     contains_value = any([str(y) == self.data.loc[i, "value"] for y in asset_data])
-        #     if contains_value: 
-        #         asset_index.append(i)
-        #         self.assets_row = asset_index
-
-        #just do the original method twice
+        #Finding Assets row and if not found uses "debt and profit" instead
+        tag_data = ["debt","profit"]
         self.assets_row = [i for i in self.data.index
                            if "asset" in self.data.loc[i, "value"].lower()]
         if len(self.assets_row) == 0:
              self.assets_row = [i for i in self.data.index
-                             if "profit" in self.data.loc[i, "value"].lower()]
+                             if any([str(y) in self.data.loc[i, "value"].lower() for y in tag_data])]
 
-        # print(self.assets_row)
-        # for i in self.data.index:
-        #     if "asset" in self.data.loc[i, "value"].lower() == TRUE:
-        #         self.assets_row = self.data.loc[i, "value"].lower()
-        #     elif "profit" in self.data.loc[i, "value"].lower()] == TRUE #add in varying phrases this can be. 
-        #         self.assets_row = self.data.loc[i, "value"].lower()
         
         print(self.assets_row,"assets row")
     def get_first_col(self):

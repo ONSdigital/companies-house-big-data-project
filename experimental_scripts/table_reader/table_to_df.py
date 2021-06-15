@@ -131,9 +131,9 @@ class Table2Df:
             
             right_vertex = max([eval(v)[2][0] for v in df.loc[df["column"] == max(current_group),"normed_vertices"]])
 
-            #print(left_vertex, date_x1, date_x2, right_vertex)
+            #print(left_vertex, date_x1, date_x2, right_vertex) left_vertex <= date_x1 <= right_vertex and
 
-            if left_vertex <= date_x1 <= right_vertex and left_vertex <= date_x2 <= right_vertex:
+            if  left_vertex <= date_x2 <= right_vertex:
                 column_groups.append(current_group)
 
                 # update date counter
