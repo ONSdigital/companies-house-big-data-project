@@ -61,6 +61,7 @@ class TableFitter(TableIdentifier):
         date_indexes = []         
         date_x = 0
         for i in self.data.index:
+            #print(self.data.loc[i, "value"][-4:-1].strip() for y in years or years_two)
             contains_year = any([str(y) == self.data.loc[i, "value"].strip() for y in years or years_two]) 
             if contains_year and date_x <=2: #add check for at most 2 
                 date_indexes.append(i)
@@ -75,7 +76,7 @@ class TableFitter(TableIdentifier):
             else:
                 date_headers = date_indexes[0]
                 self.dates_row = date_headers
-        
+
         currency_indexes = [i for i in self.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         self.unit_headers = currency_indexes
@@ -87,9 +88,7 @@ class TableFitter(TableIdentifier):
         if len(self.assets_row) == 0:
              self.assets_row = [i for i in self.data.index
                              if any([str(y) in self.data.loc[i, "value"].lower() for y in tag_data])]
-
         
-        print(self.assets_row,"assets row")
     def get_first_col(self):
         """
         Gets the indices of the first column of a table and saves
