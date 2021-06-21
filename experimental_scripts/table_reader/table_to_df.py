@@ -177,9 +177,9 @@ class Table2Df:
         """
         # Merge TableFitter df with our info headers data
         self.df = self.table_data.merge(self.get_info_headers_v3(), on="column")
-        changed_index = []
-        original_index = []
-        header_index = []
+        changed_line_nums = []
+        original_line_nums = []
+        header_line_nums = []
         
         # For each row of the df, either add a "name" value if you can find one, if not just set to None
         for index, row in self.df.iterrows():
@@ -189,26 +189,27 @@ class Table2Df:
             try:
                 #print(self.df[(self.df["line_num"]==l)&(self.df["column"]==0)].iloc[0]["value"])
                 self.df.loc[index, "name"] = self.data[(self.data["line_num"]==l)&(self.data["column"]==0)].iloc[0]["value"]
-                changed_index.append(self.df.iloc[l]["line_num"]) #Not working for for row 11 so it cant be checked for tag pdf 03875584_bs
+                changed_line_nums.append(l) #Not working for for row 11 so it cant be checked for tag pdf 03875584_bs
             except:
                 self.df.loc[index, "name"] = None
-                changed_index.append(self.df.iloc[l]["line_num"])
+                changed_line_nums.append(l)
                 
         print(self.df) 
-        original_index = self.data["line_num"]
-        header_index = self.data.loc[self.table.header_indices,"line_num"]
-        missing_index = set(original_index) - set(changed_index) 
-        missing_index = missing_index - set(header_index)
-        #print(original_index,"original index")
+        original_line_nums = self.data.loc[self.data["column"] == 0]["line_num"]
+        header_line_nums = self.data.loc[self.table.header_indices,"line_num"]
+        print(changed_line_nums)
+        missing_index = set(original_line_nums) - set(changed_line_nums) 
+        missing_index = missing_index - set(header_line_nums)
+        #print(original_line_nums,"original index")
 
         #print(missing_index,"missing values")
-        
+        print(self.data.loc[self.data["line_num"].isin(missing_index)]["value"])
         # for i in missing_index:
         #     print(self.data.loc[self.data["line_num"]==i]["value"])
             #self.df.loc[i,"name"] = self.data.loc[self.data["line_num"]==i]["value"]
             #self.df.loc[i,"name"] 
         #compare df with data and add back in the left over TAG that has no value. (once we have the new dataframe order by line number before it is generated.)
-        #for i in changed_index:
+        #for i in changed_line_nums:
             
         # for index, row in self.df.iterrows():
         #       l = row["line_num"]
