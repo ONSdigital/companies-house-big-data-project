@@ -185,25 +185,26 @@ class Table2Df:
         for index, row in self.df.iterrows():
             l = row["line_num"]
             #Adds tag to a data value
-                        
+                     
             try:
                 #print(self.df[(self.df["line_num"]==l)&(self.df["column"]==0)].iloc[0]["value"])
                 self.df.loc[index, "name"] = self.data[(self.data["line_num"]==l)&(self.data["column"]==0)].iloc[0]["value"]
                 changed_index.append(self.df.iloc[l]["line_num"]) #Not working for for row 11 so it cant be checked for tag pdf 03875584_bs
-                
             except:
                 self.df.loc[index, "name"] = None
                 changed_index.append(self.df.iloc[l]["line_num"])
                 
+        print(self.df) 
         original_index = self.data["line_num"]
         header_index = self.data.loc[self.table.header_indices,"line_num"]
         missing_index = set(original_index) - set(changed_index) 
         missing_index = missing_index - set(header_index)
-    
-        print(missing_index,"missing values")
+        #print(original_index,"original index")
+
+        #print(missing_index,"missing values")
         
-        for i in missing_index:
-            print(self.data.loc[self.data["line_num"]==i]["value"])
+        # for i in missing_index:
+        #     print(self.data.loc[self.data["line_num"]==i]["value"])
             #self.df.loc[i,"name"] = self.data.loc[self.data["line_num"]==i]["value"]
             #self.df.loc[i,"name"] 
         #compare df with data and add back in the left over TAG that has no value. (once we have the new dataframe order by line number before it is generated.)

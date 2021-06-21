@@ -64,7 +64,7 @@ fs = gcsfs.GCSFileSystem("ons-companies-house-dev", token="/home/andre_faul/keys
 # df = pd.read_csv("gs://ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/doc_ai_token_dfs/04391694_active_bs_tokens.csv")
 #
 doc_parser = DocParser(fs) #02460543_dormant_bs 04391694_active_bs SC564642_bs astra_zeneca_bs 03541703_bs   03875584_bs  (04416996_bs date error due to alignment) 01933071_bs (detects two first columns due to layout.)
-doc_parser.parse_document("ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/bs_pdfs/01933071_bs.pdf",
+doc_parser.parse_document("ons-companies-house-dev-scraped-pdf-data/doc_ai_outputs/bs_pdfs/03875584_bs.pdf",
                           "/home/andre_faul/keys/dev_key.json",
                           "ons-companies-house-dev")
 doc_parser.tokens_to_df()
