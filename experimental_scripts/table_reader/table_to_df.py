@@ -161,8 +161,94 @@ class Table2Df:
         # Create an empty DataFrame to add information to
         header_data = pd.DataFrame.from_dict(dict_column_grouping)
         return header_data
+    
+    def set_value_names_df(self):
+        """
+        Set Value Names DF begins the editing of the data to be placed in to a format similar to OCR
+        by giving each data "value" a name and if none is found it is set to None
 
+        Arguments:
+            None
+        Returns:
+            None
+        Raises:
+            None
+        """
+        self.changed_line_nums = []
+        for index, row in self.df.iterrows():
+            l = row["line_num"]
+            #Adds tag to a data value
+                     
+            try:
+                #print(self.df[(self.df["line_num"]==l)&(self.df["column"]==0)].iloc[0]["value"])
+                self.df.loc[index, "name"] = self.data[(self.data["line_num"]==l)&(self.data["column"]==0)].iloc[0]["value"]
+                self.changed_line_nums.append(l) #Not working for for row 11 so it cant be checked for tag pdf 03875584_bs
+            except:
+                self.df.loc[index, "name"] = None
+                self.changed_line_nums.append(l)  
 
+    def add_valueless_df(self):
+        """
+        Add Valueless DF begins adding the data that has no assigned "value" into the balance sheet.to
+       
+        Arguments:
+            None
+        Returns:
+            None
+        Raises:
+            None
+        """
+        original_line_nums = []
+        header_line_nums = []
+        
+        # For each row of the df, either add a "name" value if you can find one, if not just set to None
+       
+                
+        #print(self.df) 
+        original_line_nums = self.data.loc[self.data["column"] == 0]["line_num"]
+        header_line_nums = self.data.loc[self.table.header_indices,"line_num"]
+        
+        missing_index = set(original_line_nums) - set(self.changed_line_nums) 
+        missing_index = missing_index - set(header_line_nums)
+        #print(original_line_nums,"original index")
+        print(missing_index," missing index")
+        #print(missing_index,"missing values")
+        print(self.data.loc[self.data["line_num"].isin(missing_index)]["value"])
+        new_df = self.data.loc[self.data["line_num"].isin(missing_index)]
+        new_df["name"] = new_df["value"] 
+        new_df["value"] = None
+        #self.df.append(self.data.loc[self.data["line_num"]==missing_index,"value"])
+        print(new_df)
+        self.df = pd.concat([self.df,new_df])
+
+        
+        print(self.df)
+        self.df = self.df.sort_values(by=['column',"date"])
+        
+        #print(self.df) 
+        # for i in missing_index.index:
+        #     self.df.append(self.data["line_num"]=i)
+        # for i in missing_index:
+        #     print(self.data.loc[self.data["line_num"]==i]["value"])
+            #self.df.loc[i,"name"] = self.data.loc[self.data["line_num"]==i]["value"]
+            #self.df.loc[i,"name"] 
+        #compare df with data and add back in the left over TAG that has no value. (once we have the new dataframe order by line number before it is generated.)
+        #for i in changed_line_nums:
+            
+        #for i in self.df["lndex"]:
+            # if self.df.loc[index] == self.df.loc[missing_index]:
+                 # try:
+                 #      self.df.loc[index, "name"] = self.data[(self.data[index]==l)&(self.data["column"]==(notes_col+1))].iloc[0]["value"]
+               
+                        
+        
+              
+
+        # Only save the relevant columns
+        #add the lost rows back in
+        #sort by line number sorted "line_num"
+        #test on 6 varying balance sheets
+        
     def get_final_df(self):
         """
         Get a final DataFrame in a similar form as how we scraped xbrl data ("name", "value", "date", "unit"
@@ -177,51 +263,9 @@ class Table2Df:
         """
         # Merge TableFitter df with our info headers data
         self.df = self.table_data.merge(self.get_info_headers_v3(), on="column")
-        changed_line_nums = []
-        original_line_nums = []
-        header_line_nums = []
-        
-        # For each row of the df, either add a "name" value if you can find one, if not just set to None
-        for index, row in self.df.iterrows():
-            l = row["line_num"]
-            #Adds tag to a data value
-                     
-            try:
-                #print(self.df[(self.df["line_num"]==l)&(self.df["column"]==0)].iloc[0]["value"])
-                self.df.loc[index, "name"] = self.data[(self.data["line_num"]==l)&(self.data["column"]==0)].iloc[0]["value"]
-                changed_line_nums.append(l) #Not working for for row 11 so it cant be checked for tag pdf 03875584_bs
-            except:
-                self.df.loc[index, "name"] = None
-                changed_line_nums.append(l)
-                
-        print(self.df) 
-        original_line_nums = self.data.loc[self.data["column"] == 0]["line_num"]
-        header_line_nums = self.data.loc[self.table.header_indices,"line_num"]
-        print(changed_line_nums)
-        missing_index = set(original_line_nums) - set(changed_line_nums) 
-        missing_index = missing_index - set(header_line_nums)
-        #print(original_line_nums,"original index")
 
-        #print(missing_index,"missing values")
-        print(self.data.loc[self.data["line_num"].isin(missing_index)]["value"])
-        # for i in missing_index:
-        #     print(self.data.loc[self.data["line_num"]==i]["value"])
-            #self.df.loc[i,"name"] = self.data.loc[self.data["line_num"]==i]["value"]
-            #self.df.loc[i,"name"] 
-        #compare df with data and add back in the left over TAG that has no value. (once we have the new dataframe order by line number before it is generated.)
-        #for i in changed_line_nums:
-            
-        # for index, row in self.df.iterrows():
-        #       l = row["line_num"]
-        #       #Adds tag to a data value
-        #       if self.df.loc[index, "value"] == 0:
-        #           try:
-        #           #print(self.df[(self.df["line_num"]==l)&(self.df["column"]==0)].iloc[0]["value"])
-        #                  self.df.loc[index, "value"] = None
-
-              
-
-        # Only save the relevant columns
+        self.set_value_names_df()
+        self.add_valueless_df()
         self.df = self.df[["name", "value", "date", "unit"]]
 
     @staticmethod
