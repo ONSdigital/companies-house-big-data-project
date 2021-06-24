@@ -161,8 +161,44 @@ class Table2Df:
         # Create an empty DataFrame to add information to
         header_data = pd.DataFrame.from_dict(dict_column_grouping)
         return header_data
-    
+    def remove_double_lines(self):
+        """
+        Find tag in the 1st column that have no tags 
+        assoiciated with them due to them being part of another tag.
+
+        Arguments:
+            None
+        Returns:
+            None
+        Raises:
+            None
+        """
+        first_column_tags = []
+        double_line = ["creditors: amounts falling due within one year" , "creditors: amounts falling due after more than one year" ]
+        
+        first_column_tags = self.data.loc[self.data["column"] == 0]["value"]
+        #loop through these checking 1 and 2 etc to see if they add together to make 
+        # "creditors: amounts falling due within one year 
+        x = first_column_tags.index
+        tags_to_drop = []
+        tags_to_combine = []
+        for i in range(len(x)-1):
+            #print(first_column_tags[x[i]].lower() + " " + first_column_tags[x[i+1]].lower() )
+            if first_column_tags[x[i]].lower() + " " + first_column_tags[x[i+1]].lower() in double_line: 
+                #either combine them here or take out their index's and then combine them in the dataframe. 
+                
+                first_column_tags[x[i+1]] = first_column_tags[x[i]] + " " +  first_column_tags[x[i+1]]
+                tags_to_drop.append(first_column_tags[x[i]]) # make this the index of the value to be used to drop in dataframe
+                tags_to_combine.append(first_column_tags[x[i]])
+                tags_to_combine.append(first_column_tags[x[i+1]])
+
+                print(first_column_tags[x[i+1]] , "should be correct")
+        
+        print(first_column_tags)
+
+
     def set_value_names_df(self):
+
         """
         Set Value Names DF begins the editing of the data to be placed in to a format similar to OCR
         by giving each data "value" a name and if none is found it is set to None
@@ -211,43 +247,21 @@ class Table2Df:
         missing_index = set(original_line_nums) - set(self.changed_line_nums) 
         missing_index = missing_index - set(header_line_nums)
         #print(original_line_nums,"original index")
-        print(missing_index," missing index")
+        #print(missing_index," missing index")
         #print(missing_index,"missing values")
-        print(self.data.loc[self.data["line_num"].isin(missing_index)]["value"])
+        #print(self.data.loc[self.data["line_num"].isin(missing_index)]["value"])
         new_df = self.data.loc[self.data["line_num"].isin(missing_index)]
         new_df["name"] = new_df["value"] 
         new_df["value"] = None
         #self.df.append(self.data.loc[self.data["line_num"]==missing_index,"value"])
-        print(new_df)
+        #print(new_df)
         self.df = pd.concat([self.df,new_df])
 
         
-        print(self.df)
-        self.df = self.df.sort_values(by=['column',"date"])
+        self.df = self.df.where(pd.notnull(self.df), None)
+        self.df = self.df.sort_values(by=['line_num',"column"])
         
-        #print(self.df) 
-        # for i in missing_index.index:
-        #     self.df.append(self.data["line_num"]=i)
-        # for i in missing_index:
-        #     print(self.data.loc[self.data["line_num"]==i]["value"])
-            #self.df.loc[i,"name"] = self.data.loc[self.data["line_num"]==i]["value"]
-            #self.df.loc[i,"name"] 
-        #compare df with data and add back in the left over TAG that has no value. (once we have the new dataframe order by line number before it is generated.)
-        #for i in changed_line_nums:
-            
-        #for i in self.df["lndex"]:
-            # if self.df.loc[index] == self.df.loc[missing_index]:
-                 # try:
-                 #      self.df.loc[index, "name"] = self.data[(self.data[index]==l)&(self.data["column"]==(notes_col+1))].iloc[0]["value"]
-               
-                        
-        
-              
-
-        # Only save the relevant columns
-        #add the lost rows back in
-        #sort by line number sorted "line_num"
-        #test on 6 varying balance sheets
+     
         
     def get_final_df(self):
         """
@@ -263,9 +277,12 @@ class Table2Df:
         """
         # Merge TableFitter df with our info headers data
         self.df = self.table_data.merge(self.get_info_headers_v3(), on="column")
-
+        self.remove_double_lines()
         self.set_value_names_df()
         self.add_valueless_df()
+        
+        
+        #print(self.df)
         self.df = self.df[["name", "value", "date", "unit"]]
 
     @staticmethod
