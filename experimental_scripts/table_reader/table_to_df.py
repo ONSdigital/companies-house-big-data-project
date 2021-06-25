@@ -182,20 +182,26 @@ class Table2Df:
         x = first_column_tags.index
         tags_to_drop = []
         tags_to_combine = []
+        print(self.data)
         for i in range(len(x)-1):
             #print(first_column_tags[x[i]].lower() + " " + first_column_tags[x[i+1]].lower() )
             if first_column_tags[x[i]].lower() + " " + first_column_tags[x[i+1]].lower() in double_line: 
                 #either combine them here or take out their index's and then combine them in the dataframe. 
                 
+                
+                
                 first_column_tags[x[i+1]] = first_column_tags[x[i]] + " " +  first_column_tags[x[i+1]]
-                tags_to_drop.append(first_column_tags[x[i]]) # make this the index of the value to be used to drop in dataframe
-                tags_to_combine.append(first_column_tags[x[i]])
-                tags_to_combine.append(first_column_tags[x[i+1]])
+                print( self.data.loc[x[i+1] , "value"],",i+1 value")
+                
+                self.data.loc[x[i+1] , "value"] = first_column_tags[x[i+1]]
+                self.data.drop(self.data.loc[x[i]],axis=0)
+                #now drop row
 
                 print(first_column_tags[x[i+1]] , "should be correct")
-        
-        print(first_column_tags)
-
+        print(tags_to_drop,"to drop")
+        print(tags_to_combine,"to combine")
+        print(first_column_tags, " final column")
+        print(self.data)
 
     def set_value_names_df(self):
 
@@ -246,15 +252,11 @@ class Table2Df:
         
         missing_index = set(original_line_nums) - set(self.changed_line_nums) 
         missing_index = missing_index - set(header_line_nums)
-        #print(original_line_nums,"original index")
-        #print(missing_index," missing index")
-        #print(missing_index,"missing values")
-        #print(self.data.loc[self.data["line_num"].isin(missing_index)]["value"])
+
         new_df = self.data.loc[self.data["line_num"].isin(missing_index)]
         new_df["name"] = new_df["value"] 
         new_df["value"] = None
-        #self.df.append(self.data.loc[self.data["line_num"]==missing_index,"value"])
-        #print(new_df)
+ 
         self.df = pd.concat([self.df,new_df])
 
         
