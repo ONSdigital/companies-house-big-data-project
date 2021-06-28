@@ -76,6 +76,7 @@ class Table2Df:
         Raises:
             None
         """
+        
         #Converts "column" column into a sorted unique list and removes the unlabeled first column
         sorted_column = list(set(self.table.data["column"]))
         sorted_column = [x for x in sorted_column if str(x)!="nan"]
@@ -163,8 +164,8 @@ class Table2Df:
         return header_data
     def remove_double_lines(self):
         """
-        Find tag in the 1st column that have no tags 
-        assoiciated with them due to them being part of another tag.
+        Fixes an issue where the 1st column has names that continue over two lines and previously
+        it would detect them as seperate lines this fixes this issue by combining the two.
 
         Arguments:
             None
@@ -174,35 +175,18 @@ class Table2Df:
             None
         """
         first_column_tags = []
+        #the two main examples of double liners
         double_line = ["creditors: amounts falling due within one year" , "creditors: amounts falling due after more than one year" ]
-        
+                                
+        #takes the first columns names to look through
         first_column_tags = self.data.loc[self.data["column"] == 0]["value"]
-        #loop through these checking 1 and 2 etc to see if they add together to make 
-        # "creditors: amounts falling due within one year 
+        #checks for the double line examples by comparing sequential items and combining them.
         x = first_column_tags.index
-        tags_to_drop = []
-        tags_to_combine = []
-        print(self.data)
         for i in range(len(x)-1):
-            #print(first_column_tags[x[i]].lower() + " " + first_column_tags[x[i+1]].lower() )
-            if first_column_tags[x[i]].lower() + " " + first_column_tags[x[i+1]].lower() in double_line: 
-                #either combine them here or take out their index's and then combine them in the dataframe. 
+            if first_column_tags[x[i]].lower() + " " + first_column_tags[x[i+1]].lower() in double_line:
+                self.data.loc[x[i+1] , "value"] = first_column_tags[x[i]] + " " +  first_column_tags[x[i+1]]
+                self.data = self.data.drop(x[i])
                 
-                
-                
-                first_column_tags[x[i+1]] = first_column_tags[x[i]] + " " +  first_column_tags[x[i+1]]
-                print( self.data.loc[x[i+1] , "value"],",i+1 value")
-                
-                self.data.loc[x[i+1] , "value"] = first_column_tags[x[i+1]]
-                self.data.drop(self.data.loc[x[i]],axis=0)
-                #now drop row
-
-                print(first_column_tags[x[i+1]] , "should be correct")
-        print(tags_to_drop,"to drop")
-        print(tags_to_combine,"to combine")
-        print(first_column_tags, " final column")
-        print(self.data)
-
     def set_value_names_df(self):
 
         """
@@ -220,19 +204,18 @@ class Table2Df:
         for index, row in self.df.iterrows():
             l = row["line_num"]
             #Adds tag to a data value
-                     
+
             try:
-                #print(self.df[(self.df["line_num"]==l)&(self.df["column"]==0)].iloc[0]["value"])
                 self.df.loc[index, "name"] = self.data[(self.data["line_num"]==l)&(self.data["column"]==0)].iloc[0]["value"]
                 self.changed_line_nums.append(l) #Not working for for row 11 so it cant be checked for tag pdf 03875584_bs
             except:
                 self.df.loc[index, "name"] = None
-                self.changed_line_nums.append(l)  
+                self.changed_line_nums.append(l)
 
     def add_valueless_df(self):
         """
-        Add Valueless DF begins adding the data that has no assigned "value" into the balance sheet.to
-       
+        Add Valueless DF begins adding the data that has no assigned "value" into the balance sheet 
+        which were previously not added.
         Arguments:
             None
         Returns:
@@ -242,29 +225,24 @@ class Table2Df:
         """
         original_line_nums = []
         header_line_nums = []
-        
+
         # For each row of the df, either add a "name" value if you can find one, if not just set to None
-       
-                
-        #print(self.df) 
+        #checks for the missing lines that weren't added
         original_line_nums = self.data.loc[self.data["column"] == 0]["line_num"]
         header_line_nums = self.data.loc[self.table.header_indices,"line_num"]
-        
-        missing_index = set(original_line_nums) - set(self.changed_line_nums) 
+        missing_index = set(original_line_nums) - set(self.changed_line_nums)
         missing_index = missing_index - set(header_line_nums)
 
+        #adds in the missing values
         new_df = self.data.loc[self.data["line_num"].isin(missing_index)]
-        new_df["name"] = new_df["value"] 
+        new_df["name"] = new_df["value"]
         new_df["value"] = None
- 
         self.df = pd.concat([self.df,new_df])
 
-        
+        #remove NAN and sorts DF
         self.df = self.df.where(pd.notnull(self.df), None)
         self.df = self.df.sort_values(by=['line_num',"column"])
-        
-     
-        
+
     def get_final_df(self):
         """
         Get a final DataFrame in a similar form as how we scraped xbrl data ("name", "value", "date", "unit"
@@ -279,12 +257,12 @@ class Table2Df:
         """
         # Merge TableFitter df with our info headers data
         self.df = self.table_data.merge(self.get_info_headers_v3(), on="column")
+
+        #calling methods to edit the output of the DF
         self.remove_double_lines()
         self.set_value_names_df()
         self.add_valueless_df()
-        
-        
-        #print(self.df)
+
         self.df = self.df[["name", "value", "date", "unit"]]
 
     @staticmethod
