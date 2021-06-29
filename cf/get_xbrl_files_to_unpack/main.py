@@ -1,6 +1,7 @@
 import base64
 import gcsfs
 import zipfile
+import os
 from google.cloud import pubsub_v1, bigquery
 
 def callback(future):
@@ -98,12 +99,19 @@ def get_xbrl_files(event, context):
         ----------------------------
         context (google.cloud.functions.Context): Metadata for the event.
     """
-    # Extract desired attributes from the message payload
+    # Extract desired attributes from the message payload & enviro
     zip_path = event["attributes"]["zip_path"]
-    bq_location = "xbrl_parsed_data"
-    project = "ons-companies-house-dev"
-    test_run = event["attributes"]["test"]
-
+    bq_location = os.environ['parsed_bq_table_location']
+    project = os.environ['project']
+    bucket = os.environ["unpacked_bucket"] 
+    
+    test_run = False
+    try:
+        if "test" in event["attributes"].keys():
+            test_run = eval(event["attributes"]["test"])
+    except:
+        pass
+    
     # Create a GCSFS object
     fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
@@ -114,7 +122,7 @@ def get_xbrl_files(event, context):
     )
 
     # Specify the directory where unpacked files should be saved
-    xbrl_directory = "ons-companies-house-dev-xbrl-unpacked-data/cloud_functions_test/" + (zip_path.split("/")[-1]).split(".")[0]
+    xbrl_directory = bucket + "/" + (zip_path.split("/")[-1]).split(".")[0]
 
     # Check the directory to save to doesn't already exist
     if fs.exists(xbrl_directory + "/"):
@@ -158,6 +166,6 @@ def get_xbrl_files(event, context):
             data = str(contentfilename).encode("utf-8")
             future = publisher.publish(
             topic_path, data, xbrl_directory=xbrl_directory, zip_path=zip_path,
-            project=project, table_export=table_export, test=test_run
+            project=project, table_export=table_export, test=str(test_run)
             )
             future.add_done_callback(callback)

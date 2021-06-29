@@ -5,6 +5,7 @@ import gcsfs
 import time
 import datetime as dt
 import pytz
+import os
 
 def check_parser(event, content):
     """
@@ -79,6 +80,7 @@ def check_parser(event, content):
     timestamp >= "{min_time}"
     """
     unpacker_entries = list(client.list_entries(filter_=unpack_log_query, order_by=gc_logs.DESCENDING))
+
     
     # Check scraper and unpacker entries match up
     if len(unpacker_entries) != len(scraper_entries):
@@ -96,7 +98,7 @@ def check_parser(event, content):
         no_files_unzipped = int(unpacker_entries[i].payload.split(" ")[1])
 
         # Query BQ table to check number of files parsed
-        bq_database = "ons-companies-house-dev.xbrl_parsed_data"
+        bq_database = os.environ['parsed_bq_database']
         table_id = bq_database+"."+bq_table_name
 
         # SQL query to find number of files in dataset
@@ -128,7 +130,7 @@ def check_parser(event, content):
         fs = gcsfs.GCSFileSystem(cache_timeout=0)
 
         # Define input arguments for export csv
-        gcs_location = "ons-companies-house-dev-test-parsed-csv-data/cloud_functions_test"
+        gcs_location = os.environ['parsed_bucket']
         csv_name =  file_name[-4:] + "-" + file_name[22:-4] + "_xbrl_data"
 
         # Retrieve a list of all files at the location specified
@@ -197,7 +199,7 @@ def export_csv(bq_table, gcs_location, file_name):
     # Set up a gcs storage client and locations for things
     storage_client = storage.Client()       
     bucket = storage_client.bucket(gcs_location.split("/",1)[0])
-    destination = bucket.blob(gcs_location.split("/", 1)[1] + "/" + file_name + ".csv")
+    destination = bucket.blob(file_name + ".csv")
     destination.content_type = "text/csv"
 
     # Combine all the specified files
