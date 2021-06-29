@@ -4,6 +4,7 @@ from dateutil import parser
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from google.cloud import storage
+#from google.api_core import retry
 import pandas as pd
 import os
 import csv
@@ -360,9 +361,6 @@ class XbrlParser:
         # Define lenth of dict and initial time
         T = len(doc2)
 
-        # Set up row counter and empty list to save DataFrames
-        df_list = []
-
         # loop over each file and create a separate dataframe
         # for each set (elements) of parsed tags, appending result to list
         for i in range(T):
@@ -393,27 +391,8 @@ class XbrlParser:
 
             # Keep only the remaining columns and set dtypes
             df_element_export = df_element_export[wanted_cols]
-            df_element_export = df_element_export.convert_dtypes()
 
-            # Set explicit data types for date columns - requirement for
-            # BigQuery upload
-            df_element_export['doc_upload_date'] = pd.to_datetime(
-                df_element_export['doc_upload_date'],
-                errors="coerce")
-            df_element_export['doc_upload_date'] = df_element_export['doc_upload_date'].astype("str")
-            df_element_export['date'] \
-                = pd.to_datetime(df_element_export['date'],
-                                 format="%Y-%m-%d",
-                                 errors="coerce")
-            df_element_export['doc_balancesheetdate'] \
-                = pd.to_datetime(df_element_export['doc_balancesheetdate'],
-                                 format="%Y-%m-%d",
-                                 errors="coerce")
-            df_element_export['doc_standard_date'] \
-                = pd.to_datetime(df_element_export['doc_standard_date'],
-                                 format="%Y-%m-%d",
-                                 errors="coerce")            
-            
+            # Append parsed file to BQ table
             self.append_to_bq(df_element_export, bq_export)
 
             # Free up memory
@@ -593,31 +572,29 @@ class XbrlParser:
 
         return directory_list
 
-    def parse_files(self, files_list, directory, table_export,
-                        processed_path):
+    def parse_files(self, files_list, directory, table_export):
         """
         Takes a list of files and a directory, parses all files contained there 
         and exports them as a BigQuery table in a specified location.
 
         Arguments:
-            files_list:     A list of all the files to be parsed [str]
-            bq_location:    Location of BigQuery table to save results (str)
-            processed_path: String of the path where processed files should be
-                            saved (str)
+            files_list:     A list of all the file(names) to be parsed [str]
+            directory:      Directory where unpacked files are saved. (str)
+            table_export:   BigQuery table where parsed files are appended. (str)
         Returns:
             None
         Raises:
             None
         """
         # Process all the files in the list of files
-        results, fails = self.combine_batch_data(files_list)
+        results, fails = self.combine_batch_data(files_list, directory)
 
         # Retry unparsed files
         if len(fails) > 0:
             # Check enough time is left
             if time.time() - self.t0 < 420:
                 # Retry failed files
-                results0, fails0 = self.combine_batch_data(fails)
+                results0, fails0 = self.combine_batch_data(fails, directory)
                 results += results0
                 fails = fails0
             print(f"{fails} files did not parse")
@@ -628,17 +605,17 @@ class XbrlParser:
         return None
 
    
-    def combine_batch_data(self, filenames):
+    def combine_batch_data(self, filenames, directory):
         """
         For each xbrl file in a given list of file names, try to process
         it and append the result to a list.
         
         Arguments
-            filenames:  List of strings of the full GCS file path of the
-                        xbrl files to be processed
+            filenames:  List of filenames to be processed. [str]
+            directory:  GCS directory where unpacked files are saved. (str)
         Returns
             results:    List of dicts containing the data from files that have
-                        been successfully processed
+                        been successfully processed.
             fails:      List of the filepaths of all xbrl files that failed to
                         be processed.
         Raises
@@ -648,7 +625,8 @@ class XbrlParser:
         fails = []
 
         # Loop over all the files listed
-        for filepath in filenames:
+        for file in filenames:
+            filepath = directory + "/" + file
             if self.fs.exists(filepath):
                 # If the file exists try and process it
                 try:
@@ -694,16 +672,30 @@ class XbrlParser:
 
         # Convert Dataframe columns to string so they are JSON serializable
         df = df.astype(str)
+
+        # Check file has data
+        if df.shape[0] == 0:
+            print("Data contains does not contain any rows - skipping upload")
+            return None
         
         # Make an API request.
-        errors = client.insert_rows_json(
-            table, df.to_dict('records'), skip_invalid_rows=False
-            )
-        # Print errors if any are returned
-        if len(errors) > 0:
+        try:
+            errors = client.insert_rows_json(
+                table, df.to_dict('records'), skip_invalid_rows=False,
+                )
+            # Print errors if any are returned
+            if len(errors) > 0:
+                try:
+                    doc_name = df["doc_name"][0]
+                except:
+                    doc_name = "Unknown"
+                print(f"Errors from bq upload for {doc_name}: {errors}")
+        
+        # If it fails to upload log the size of the data and the doc_name
+        except:
+            print("Error: Dataframe failed to upload to big query, of shape {}".format(df.shape))
             try:
-                doc_name = df["doc_name"][0]
+                print("File name, {}".format(df["doc_name"][0]))
             except:
-                doc_name = "Unkown"
-            print(f"Errors from bq upload for {doc_name}: {errors}")
+                print("File name unavailable")
  

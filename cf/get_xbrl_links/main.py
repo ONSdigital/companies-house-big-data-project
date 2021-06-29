@@ -15,12 +15,12 @@ def collect_links(event: dict, context: google.cloud.functions.Context) -> None:
     Scrapes target web page and sends the links of all
     zip files found to the pub/sub topic 'run_xbrl_web_scraper'.
     Arguments:
-        event (dict): The dictionary with data specific to this type
-                      of event (the event payload).
-        context (google.cloud.functions.Context): The Cloud Functions
-                      event metadata (the triggering event).
-    Trigger:
-        {get_xbrl_downloads}: Triggers the cloud function 'get_xbrl_links'.
+        event (dict): Event payload.
+        ---------------------------
+            data:       None
+            attributes: None
+        ---------------------------
+        context (google.cloud.functions.Context): Metadata for the event.
     Returns:
         None
     Raises:
@@ -34,19 +34,27 @@ def collect_links(event: dict, context: google.cloud.functions.Context) -> None:
         base_url = "http://download.companieshouse.gov.uk/"
         dir_to_save = "ons-companies-house-dev-xbrl-scraped-data/requests_scraper_test_folder"
     """
+
     url = "http://download.companieshouse.gov.uk/en_monthlyaccountsdata.html"
     base_url = "http://download.companieshouse.gov.uk/"
-    dir_to_save = "ons-companies-house-dev-xbrl-scraped-data"
+    dir_to_save = os.environ['scraped_bucket']
     
-    # Makes a request to the url.
+    # Get url data via a get request
     res = requests.get(url)
-    
-    # Returns the status of the request.
+
     status = res.status_code
-    #txt = res.text
+
+    # Check if a test run is being done
+    test_run = False
+    try:
+        if "test" in event["attributes"].keys():
+            test_run = eval(event["attributes"]["test"])
+    except:
+        pass
     
     # If the scrape was successful (status 200), the contents are parsed.
     if status == 200:
+        # Set up objects for pub/sub message publishing
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path("ons-companies-house-dev", "run_xbrl_web_scraper")
 
@@ -63,17 +71,19 @@ def collect_links(event: dict, context: google.cloud.functions.Context) -> None:
         # Filters out files that are not a zip file.
         links = [link for link in links if link[-4:] == ".zip"]
 
-        # Creates a storage bucket.
+        # Set up storage client for zip destination
         storage_client = storage.Client()
         bucket = storage_client.bucket(dir_to_save.split("/")[0])
 
         print(f"{len(links)} have been scraped from the page.")
-        
-        # Downloads and saves the zip files.
-        for link in links:
 
+        downloads_count = 0
+
+        # Download and save zip files
+        for link in links:
             zip_url = base_url + link
 
+            # Sort out GCS formatting
             if "/" in link: 
                 link = link.split("/")[-1]
                 blob = bucket.blob("/".join(dir_to_save.split("/")[1:]) + "/" + link)
@@ -82,19 +92,25 @@ def collect_links(event: dict, context: google.cloud.functions.Context) -> None:
 
             # Only downloads and saves a file if it doesn't already exist in the directory.
             if not blob.exists():
+                downloads_count += 1
                 data = "Zip file to download: {}".format(link).encode("utf-8")
 
-                # Publishes a message to the relevant topic with arguments for which
-                # file/s to download.
-                future = publisher.publish(
-                    topic_path, data, zip_path=zip_url, link_path=link
-                )
+                # Publish a message to the relevant topic with arguments for which file to download
+                publisher.publish(
+                    topic_path, data, zip_path=zip_url, link_path=link, test=str(test_run)
+                ).result()
                 print(f"{link} is being downloaded")
             else:
                 print(f"{link} has already been downloaded")
             
-#           # ...
+            # Sleep for random time to not overwhelm server
             time.sleep((random.random() * 2.0) + 3.0)
+        
+        # Check at least one file has been downloaded
+        if downloads_count == 0:
+            raise RuntimeError(
+                f"No zip files were downloaded - check a new one is present at {url}"
+        )
     else:
         # Report Stackdriver error
         raise RuntimeError(

@@ -4,8 +4,9 @@ import os
 import random
 import requests
 import time
-
-from google.cloud import storage
+import random
+import base64
+from google.cloud import storage, pubsub_v1
 
 def scrape_webpage(event: dict, context: google.cloud.functions.Context) -> None:
     """
@@ -15,24 +16,29 @@ def scrape_webpage(event: dict, context: google.cloud.functions.Context) -> None
     attribute.
 
     Arguments:
-        event (dict): The dictionary with data specific to this type
-                      of event (the event payload).
-        context (google.cloud.functions.Context): The Cloud Functions
-                      event metadata (the triggering event).
-    Trigger:
-        {run_xbrl_web_scraper}: Triggers the cloud function 'xbrl_web_scraper'.
+        event (dict): Event payload.
+        ---------------------------
+         data      
+            None/not used
+         attributes 
+            zip_path:   url of where one given .zip file is saved.
+            link_path:  filename for .zip file.
+            test_run:   boolean string of whether to trigger unpacker
+                        after completion.
+        ---------------------------
+        context (google.cloud.functions.Context): Metadata for the event.
     Returns:
         None
     Raises:
         None
     """
-    # Specifies the bucket where the .zip files should be saved.
-    dir_to_save = "ons-companies-house-dev-xbrl-scraped-data"
+    # Specify the bucket where .zip files should be saved
+    dir_to_save = os.environ['scraped_bucket']
 
     # Sets up a GCS client to handle the download to GCS.
     storage_client = storage.Client()
 
-    # Raises an error if the specified directory (dir_to_save) does not exist.
+    # Check the specified GCS location exists
     try:
         bucket = storage_client.bucket(dir_to_save.split("/")[0])
     except:
@@ -43,6 +49,7 @@ def scrape_webpage(event: dict, context: google.cloud.functions.Context) -> None
     # Extracts the relevant attributes from the pub/sub message.
     zip_url = event["attributes"]["zip_path"]
     link = event["attributes"]["link_path"]
+    test_run = event["attributes"]["test"]
 
     # The blob (binary large object) method creates the files. The
     # name of the blob corresponds to the unique path of the object
@@ -59,3 +66,12 @@ def scrape_webpage(event: dict, context: google.cloud.functions.Context) -> None
     # Saves the 'zip_files' by uploading the contents to the storage bucket.
     print("Saving zip file " + link + "...")
     blob.upload_from_string(zip_file, content_type="application/zip")
+    
+    # Trigger the unpacker (if it's not a test run)
+    if not eval(test_run):
+        publisher = pubsub_v1.PublisherClient()
+        topic_path = publisher.topic_path("ons-companies-house-dev", "downloaded_zip_files")
+        data = f"Triggering unpacker for {link}".encode("utf-8")
+        publisher.publish(
+            topic_path, data, zip_path=dir_to_save+"/"+link
+        ).result()
