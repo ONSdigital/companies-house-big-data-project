@@ -1,15 +1,17 @@
 import base64
-import os
-import requests
-import json
 from bs4 import BeautifulSoup
-import time
+import json
+import os
 import random
+import requests
+import time
+
 from google.cloud import storage, pubsub_v1
 
 
-def collect_links(event, content):
+def collect_links(event: dict, context: google.cloud.functions.Context) -> None:
     """
+    Cloud Function to be triggered by Pub/Sub.
     Scrapes target web page and sends the links of all
     zip files found to the pub/sub topic 'run_xbrl_web_scraper'.
     Arguments:
@@ -25,7 +27,7 @@ def collect_links(event, content):
         None
     Notes:
         The base_url is needed as the links to the zip files
-        are appended to this, not the html url
+        are appended to this, not the html url.
         
         Example:
         url = "http://download.companieshouse.gov.uk/en_monthlyaccountsdata.html"
@@ -50,22 +52,23 @@ def collect_links(event, content):
     except:
         pass
     
-    # If the scrape was successfull, parse the contents
+    # If the scrape was successful (status 200), the contents are parsed.
     if status == 200:
         # Set up objects for pub/sub message publishing
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path("ons-companies-house-dev", "run_xbrl_web_scraper")
 
+#       # ...
         soup = BeautifulSoup(res.content, "html.parser")
         links = soup.select("li")
 
-        # Convert to string format
+        # Converts links to string format.
         links = [str(link) for link in links]
 
-        # Extract filename from text if there is a downloadable file
+        # Extracts the filename from text if there is a downloadable file.
         links = [link.split('<a href="')[1].split('">')[0] for link in links if "<a href=" in link]
 
-        # Filter out files that are not zip
+        # Filters out files that are not a zip file.
         links = [link for link in links if link[-4:] == ".zip"]
 
         # Set up storage client for zip destination
@@ -87,7 +90,7 @@ def collect_links(event, content):
             else:
                 blob = bucket.blob(link)
 
-            # Only download and save a file if it doesn't exist in the directory
+            # Only downloads and saves a file if it doesn't already exist in the directory.
             if not blob.exists():
                 downloads_count += 1
                 data = "Zip file to download: {}".format(link).encode("utf-8")
