@@ -162,6 +162,7 @@ class Table2Df:
         # Create an empty DataFrame to add information to
         header_data = pd.DataFrame.from_dict(dict_column_grouping)
         return header_data
+        
     def remove_double_lines(self):
         """
         Fixes an issue where the 1st column has names that continue over two lines and previously
@@ -188,7 +189,6 @@ class Table2Df:
                 self.data = self.data.drop(x[i])
                 
     def set_value_names_df(self):
-
         """
         Set Value Names DF begins the editing of the data to be placed in to a format similar to OCR
         by giving each data "value" a name and if none is found it is set to None
