@@ -76,7 +76,7 @@ class TableFitter(TableIdentifier):
             else:
                 date_headers = date_indexes[0]
                 self.dates_row = date_headers
-
+        print(self.dates_row)
         currency_indexes = [i for i in self.data.index if
                             len(regex.findall(r"\p{Sc}", self.data.loc[i, "value"]))]
         self.unit_headers = currency_indexes
